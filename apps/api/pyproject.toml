@@ -8,11 +8,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "cachetools>=5.5",
     "fastapi[standard]>=0.139.0",
     "httpx>=0.28.1",
     "logfire[fastapi]>=4.37.0",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
+    "pyjwt[crypto]>=2.9",
     "python-dotenv>=1.2.2",
 ]
 

@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # DB (populated in M0.3). Not required for M0.2.
     database_url: str | None = None
 
+    # Clerk (M0.4). Issuer is required in prod; audience is optional.
+    # Example issuer: https://curious-crab-42.clerk.accounts.dev
+    clerk_jwt_issuer: str | None = None
+    clerk_jwt_audience: str | None = None
+
     # Observability
     logfire_token: str | None = None
     logfire_send_to_logfire: bool = False  # opt-in in prod
