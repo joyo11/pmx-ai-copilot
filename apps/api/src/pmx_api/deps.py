@@ -135,15 +135,15 @@ def _mirror_user_to_db(claims: ClerkClaims) -> None:
         # No DB configured (e.g. running /v1/me in a local sandbox). Skip.
         return
 
-    org_id = claims.org_id
-    if org_id is None:
-        # Personal-mode Clerk users have no active org — nothing FK-worthy to
-        # write yet. When they pick an org, the next request mirrors them.
-        return
+    # Personal-mode Clerk users have no active org. We synthesise a per-user
+    # "personal" org so projects have a valid FK to hang off — one row per
+    # signup, invisible in the Clerk dashboard, isolated by construction.
+    personal_mode = claims.org_id is None
+    org_id = claims.org_id or f"personal_{claims.sub}"
 
     role = _normalise_role(claims.org_role)
     email = claims.email or f"{claims.sub}@placeholder.pmx"
-    org_name = claims.org_slug or org_id
+    org_name = "Personal" if personal_mode else (claims.org_slug or org_id)
 
     try:
         with session_factory.begin() as session:
@@ -272,15 +272,13 @@ async def resolve_tenant(
 ) -> TenantContext:
     """Resolve the current Clerk user into internal ``users.id`` + ``org_id``.
 
-    Raises 401 if the user has no active Clerk org (personal mode — cannot
-    own projects) or 500 if the mirror never ran (should be impossible on
-    the auth path, but we surface it clearly instead of a silent NULL FK).
+    Personal-mode Clerk users (no active org) are transparently backed by a
+    synthetic ``personal_{clerk_user_id}`` org created by ``_mirror_user_to_db``.
+
+    Raises 500 only if the mirror never ran (should be impossible on the auth
+    path — surface it clearly instead of a silent NULL FK).
     """
-    if current.org_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Active Clerk organization required",
-        )
+    _ = current.org_id  # kept in signature for future org-scope checks
 
     row = (
         await db.execute(

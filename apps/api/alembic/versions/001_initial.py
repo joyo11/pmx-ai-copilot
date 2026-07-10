@@ -263,10 +263,12 @@ def upgrade() -> None:
         ),
     )
     op.create_index("ix_document_chunks_project_id", "document_chunks", ["project_id"])
-    # HNSW index on the embedding — cosine ops, m=16, ef_construction=64.
+    # pgvector caps HNSW at 2000 dims on full-precision vector. Cast to
+    # halfvec at index time — HNSW on halfvec supports up to 4000 dims with
+    # negligible cosine-recall loss.
     op.execute(
         "CREATE INDEX ix_document_chunks_embedding_hnsw "
-        "ON document_chunks USING hnsw (embedding vector_cosine_ops) "
+        "ON document_chunks USING hnsw ((embedding::halfvec(3072)) halfvec_cosine_ops) "
         "WITH (m = 16, ef_construction = 64)"
     )
 
