@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { Menu, ShieldAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,6 +21,9 @@ import { NAV_ITEMS, NAV_BOTTOM_ITEMS } from "@/components/nav-rail";
 export function NavDrawer() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
+
+  const topCount = NAV_ITEMS.length;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -49,31 +53,61 @@ export function NavDrawer() {
           </SheetTitle>
         </SheetHeader>
         <nav className="flex-1 overflow-y-auto p-2">
-          {NAV_ITEMS.map((it) => (
-            <DrawerLink
-              key={it.href}
-              href={it.href}
-              label={it.label}
-              Icon={it.icon}
-              active={pathname?.startsWith(it.href) ?? false}
-              onClick={() => setOpen(false)}
-            />
+          {NAV_ITEMS.map((it, i) => (
+            <FadeInItem key={it.href} index={i} reduceMotion={!!reduceMotion}>
+              <DrawerLink
+                href={it.href}
+                label={it.label}
+                Icon={it.icon}
+                active={pathname?.startsWith(it.href) ?? false}
+                onClick={() => setOpen(false)}
+              />
+            </FadeInItem>
           ))}
         </nav>
         <nav className="border-t p-2">
-          {NAV_BOTTOM_ITEMS.map((it) => (
-            <DrawerLink
+          {NAV_BOTTOM_ITEMS.map((it, i) => (
+            <FadeInItem
               key={it.href}
-              href={it.href}
-              label={it.label}
-              Icon={it.icon}
-              active={pathname?.startsWith(it.href) ?? false}
-              onClick={() => setOpen(false)}
-            />
+              index={topCount + i}
+              reduceMotion={!!reduceMotion}
+            >
+              <DrawerLink
+                href={it.href}
+                label={it.label}
+                Icon={it.icon}
+                active={pathname?.startsWith(it.href) ?? false}
+                onClick={() => setOpen(false)}
+              />
+            </FadeInItem>
           ))}
         </nav>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function FadeInItem({
+  children,
+  index,
+  reduceMotion,
+}: {
+  children: React.ReactNode;
+  index: number;
+  reduceMotion: boolean;
+}) {
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: reduceMotion ? 0 : 0.2,
+        delay: reduceMotion ? 0 : index * 0.03,
+        ease: "easeOut",
+      }}
+    >
+      {children}
+    </motion.div>
   );
 }
 

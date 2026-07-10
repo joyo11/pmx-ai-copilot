@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Activity,
   AlertTriangle,
@@ -247,32 +248,50 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         ))}
       </div>
 
-      {tab === "overview" ? (
-        <OverviewPanel
-          project={project}
-          documentCount={documents.length}
-          health={health}
-          healthLoading={healthLoading}
-          healthError={healthError}
-          onRecomputeHealth={onRecomputeHealth}
-          recomputing={recomputing}
-        />
-      ) : null}
-      {tab === "risks" ? (
-        <RisksPanel
-          projectId={projectId}
-          onCountsChange={setCriticalOpen}
-        />
-      ) : null}
-      {tab === "documents" ? (
-        <DocumentsPanel
-          projectId={projectId}
-          documents={documents}
-          onChanged={onDocumentsChanged}
-        />
-      ) : null}
-      {tab === "chat" ? <ChatPanel projectId={projectId} /> : null}
+      <AnimatePresence mode="wait" initial={false}>
+        <TabPanel key={tab}>
+          {tab === "overview" ? (
+            <OverviewPanel
+              project={project}
+              documentCount={documents.length}
+              health={health}
+              healthLoading={healthLoading}
+              healthError={healthError}
+              onRecomputeHealth={onRecomputeHealth}
+              recomputing={recomputing}
+            />
+          ) : null}
+          {tab === "risks" ? (
+            <RisksPanel
+              projectId={projectId}
+              onCountsChange={setCriticalOpen}
+            />
+          ) : null}
+          {tab === "documents" ? (
+            <DocumentsPanel
+              projectId={projectId}
+              documents={documents}
+              onChanged={onDocumentsChanged}
+            />
+          ) : null}
+          {tab === "chat" ? <ChatPanel projectId={projectId} /> : null}
+        </TabPanel>
+      </AnimatePresence>
     </div>
+  );
+}
+
+function TabPanel({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 

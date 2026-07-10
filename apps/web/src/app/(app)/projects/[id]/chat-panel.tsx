@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Send, Sparkles, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -192,7 +193,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
           className="size-11 md:size-9"
           disabled={sending || !input.trim()}
         >
-          <Send className="size-4" />
+          <SendIcon sending={sending} />
           <span className="sr-only">Send</span>
         </Button>
       </form>
@@ -254,15 +255,54 @@ export function ChatPanel({ projectId }: { projectId: string }) {
       </div>
 
       <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-4">
-        {/* Show chat + sources side-by-side on lg, tabbed on mobile */}
-        <div className={cn("lg:block", mobileTab === "chat" ? "block" : "hidden")}>
-          {conversation}
-        </div>
-        <div className={cn("lg:block", mobileTab === "sources" ? "block" : "hidden")}>
-          {sourcesPanel}
+        {/* Desktop: side-by-side (no per-pane animation) */}
+        <div className="hidden lg:block">{conversation}</div>
+        <div className="hidden lg:block">{sourcesPanel}</div>
+        {/* Mobile: animated tab switch */}
+        <div className="lg:hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <MobileTabPanel key={mobileTab}>
+              {mobileTab === "chat" ? conversation : sourcesPanel}
+            </MobileTabPanel>
+          </AnimatePresence>
         </div>
       </div>
     </div>
+  );
+}
+
+function MobileTabPanel({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 12 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SendIcon({ sending }: { sending: boolean }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.span
+      className="inline-flex"
+      animate={
+        sending && !reduceMotion
+          ? { rotate: [0, 8, 0] }
+          : { rotate: 0 }
+      }
+      transition={
+        sending && !reduceMotion
+          ? { duration: 0.4, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0 }
+      }
+    >
+      <Send className="size-4" />
+    </motion.span>
   );
 }
 
