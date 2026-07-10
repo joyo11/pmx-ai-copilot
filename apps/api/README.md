@@ -40,24 +40,72 @@ uv run ruff format --check .
 uv run mypy src
 ```
 
+## Database (M0.3)
+
+Postgres 15+ with pgvector 0.7+. Neon is the canonical target.
+
+```bash
+# 1. Set DATABASE_URL in .env (see .env.example for accepted formats).
+#    Any of these work — session.py normalises to psycopg 3:
+#      postgres://…, postgresql://…, postgresql+psycopg://…
+export DATABASE_URL=postgresql+psycopg://user:pass@host:5432/pmx
+
+# 2. Apply migrations
+uv run alembic upgrade head
+
+# 3. (Optional) point at a one-off DB without editing .env
+uv run alembic -x db_url=postgresql://user:pass@host/db upgrade head
+
+# Preview the SQL Alembic will emit without running it
+uv run alembic upgrade head --sql
+```
+
+The first migration (`001_initial`) enables the pgvector extension and creates
+every table from [DESIGN.md](../../DESIGN.md) §4, including the HNSW index on
+`document_chunks.embedding` (`m=16`, `ef_construction=64`).
+
 ## Project layout
 
 ```
 apps/api/
 ├── pyproject.toml
 ├── uv.lock
+├── alembic.ini
+├── alembic/
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+│       └── 001_initial.py    # DESIGN §4 schema
 ├── .python-version
 ├── .env.example
 ├── src/pmx_api/
 │   ├── __init__.py
-│   ├── main.py           # FastAPI factory + CLI entry
-│   ├── config.py         # Pydantic Settings
-│   ├── observability.py  # Logfire wiring
+│   ├── main.py            # FastAPI factory + CLI entry
+│   ├── config.py          # Pydantic Settings (reads DATABASE_URL)
+│   ├── observability.py   # Logfire wiring
+│   ├── deps.py            # get_db() async session dep
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── session.py     # sync + async engine + session factory
+│   │   └── models/        # one file per aggregate root
+│   │       ├── base.py
+│   │       ├── organization.py
+│   │       ├── user.py
+│   │       ├── project.py
+│   │       ├── document.py
+│   │       ├── structured.py
+│   │       ├── risk.py
+│   │       ├── health.py
+│   │       ├── chat.py
+│   │       ├── report.py
+│   │       ├── notification.py
+│   │       └── event.py
 │   └── routers/
-│       ├── health.py     # GET /v1/health
-│       └── me.py         # GET /v1/me (stub until M0.4 auth)
+│       ├── health.py      # GET /v1/health
+│       └── me.py          # GET /v1/me (stub until M0.4 auth)
 └── tests/
-    └── test_health.py
+    ├── test_health.py
+    └── test_db.py         # hermetic model + metadata checks
 ```
 
 ## Endpoints (M0.2)
@@ -71,7 +119,7 @@ apps/api/
 
 ## Milestones
 
-- **M0.2 (this):** app scaffold, health, CORS, Logfire wiring.
-- **M0.3:** Postgres + pgvector + Alembic.
+- **M0.2:** app scaffold, health, CORS, Logfire wiring.
+- **M0.3 (this):** Postgres + pgvector + Alembic; SQLAlchemy 2 models for the DESIGN §4 schema.
 - **M0.4:** Clerk JWT verification middleware, real `/v1/me`.
 - **M1:** projects CRUD, uploads, extraction, risk engine, chat.
