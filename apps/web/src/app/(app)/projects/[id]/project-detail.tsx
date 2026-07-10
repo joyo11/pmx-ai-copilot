@@ -2,13 +2,18 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Activity, AlertTriangle, FileText, MessageSquare } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  FileText,
+  MessageSquare,
+  ShieldAlert,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -16,19 +21,30 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
+  getHealth,
   getProject,
   listDocuments,
+  listRisks,
+  recomputeHealth,
   ApiError,
+  type HealthSnapshot,
   type Project,
   type ProjectDocument,
 } from "@/lib/api";
+import { HealthGauge } from "@/components/health-gauge";
 import { DocumentsPanel } from "./documents-panel";
 import { ChatPanel } from "./chat-panel";
+import { RisksPanel } from "./risks-panel";
 
-type Tab = "overview" | "documents" | "chat";
+type Tab = "overview" | "risks" | "documents" | "chat";
 
-const TABS: { key: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: {
+  key: Tab;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { key: "overview", label: "Overview", Icon: Activity },
+  { key: "risks", label: "Risks", Icon: ShieldAlert },
   { key: "documents", label: "Documents", Icon: FileText },
   { key: "chat", label: "Chat", Icon: MessageSquare },
 ];
@@ -37,6 +53,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const { getToken, isLoaded } = useAuth();
   const [project, setProject] = React.useState<Project | null>(null);
   const [documents, setDocuments] = React.useState<ProjectDocument[]>([]);
+  const [health, setHealth] = React.useState<HealthSnapshot | null>(null);
+  const [healthError, setHealthError] = React.useState<string | null>(null);
+  const [healthLoading, setHealthLoading] = React.useState(true);
+  const [recomputing, setRecomputing] = React.useState(false);
+  const [criticalOpen, setCriticalOpen] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
   const [tab, setTab] = React.useState<Tab>("overview");
 
@@ -61,9 +82,52 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     }
   }, [getToken, projectId]);
 
+  const refreshHealth = React.useCallback(async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const token = await getToken();
+      const snap = await getHealth(projectId, { token });
+      setHealth(snap);
+    } catch (err) {
+      // A missing snapshot isn't necessarily an error worth surfacing
+      // — the gauge falls back to an empty state and offers "Compute".
+      if (err instanceof ApiError && err.status === 404) {
+        setHealth(null);
+      } else {
+        const msg =
+          err instanceof ApiError
+            ? `API ${err.status}: ${err.body ?? err.message}`
+            : err instanceof Error
+              ? err.message
+              : "Failed to load health";
+        setHealthError(msg);
+      }
+    } finally {
+      setHealthLoading(false);
+    }
+  }, [getToken, projectId]);
+
+  const refreshCriticalCount = React.useCallback(async () => {
+    try {
+      const token = await getToken();
+      const rows = await listRisks(
+        projectId,
+        { severity_gte: 4, status: "open" },
+        { token }
+      );
+      setCriticalOpen(rows.length);
+    } catch {
+      // Non-fatal — the badge is a nice-to-have.
+    }
+  }, [getToken, projectId]);
+
   React.useEffect(() => {
-    if (isLoaded) void refresh();
-  }, [isLoaded, refresh]);
+    if (!isLoaded) return;
+    void refresh();
+    void refreshHealth();
+    void refreshCriticalCount();
+  }, [isLoaded, refresh, refreshHealth, refreshCriticalCount]);
 
   const onDocumentsChanged = React.useCallback(async () => {
     try {
@@ -74,6 +138,26 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       // silent — the panel surfaces its own errors
     }
   }, [getToken, projectId]);
+
+  const onRecomputeHealth = React.useCallback(async () => {
+    if (recomputing) return;
+    setRecomputing(true);
+    try {
+      const token = await getToken();
+      const snap = await recomputeHealth(projectId, { token });
+      setHealth(snap);
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? `API ${err.status}: ${err.body ?? err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Recompute failed";
+      setHealthError(msg);
+    } finally {
+      setRecomputing(false);
+    }
+  }, [getToken, projectId, recomputing]);
 
   if (!isLoaded || (!project && !error)) {
     return (
@@ -101,6 +185,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 
   if (!project) return null;
 
+  const headerScore = health?.score ?? project.health_score ?? null;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -126,20 +212,22 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 Health score
               </p>
               <p className="text-3xl font-semibold tabular-nums">
-                {project.health_score ?? "—"}
+                {typeof headerScore === "number"
+                  ? Math.round(headerScore)
+                  : "—"}
               </p>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 overflow-x-auto border-b">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "-mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+              "-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
               tab === t.key
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -147,12 +235,34 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           >
             <t.Icon className="size-4" />
             {t.label}
+            {t.key === "risks" && criticalOpen > 0 ? (
+              <Badge
+                variant="destructive"
+                className="ml-0.5 h-5 min-w-5 justify-center px-1.5 text-[10px] tabular-nums"
+              >
+                {criticalOpen}
+              </Badge>
+            ) : null}
           </button>
         ))}
       </div>
 
       {tab === "overview" ? (
-        <OverviewPanel project={project} documentCount={documents.length} />
+        <OverviewPanel
+          project={project}
+          documentCount={documents.length}
+          health={health}
+          healthLoading={healthLoading}
+          healthError={healthError}
+          onRecomputeHealth={onRecomputeHealth}
+          recomputing={recomputing}
+        />
+      ) : null}
+      {tab === "risks" ? (
+        <RisksPanel
+          projectId={projectId}
+          onCountsChange={setCriticalOpen}
+        />
       ) : null}
       {tab === "documents" ? (
         <DocumentsPanel
@@ -169,20 +279,38 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 function OverviewPanel({
   project,
   documentCount,
+  health,
+  healthLoading,
+  healthError,
+  onRecomputeHealth,
+  recomputing,
 }: {
   project: Project;
   documentCount: number;
+  health: HealthSnapshot | null;
+  healthLoading: boolean;
+  healthError: string | null;
+  onRecomputeHealth: () => void | Promise<void>;
+  recomputing: boolean;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard label="Documents" value={String(documentCount)} />
-      <StatCard label="Health" value={project.health_score?.toString() ?? "—"} />
-      <StatCard label="Status" value={project.status} />
-      <StatCard
-        label="Sector"
-        value={project.sector ?? "—"}
-        className="capitalize"
+    <div className="space-y-4">
+      <HealthGauge
+        snapshot={health}
+        loading={healthLoading}
+        error={healthError}
+        onRecompute={onRecomputeHealth}
+        recomputing={recomputing}
       />
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Documents" value={String(documentCount)} />
+        <StatCard label="Status" value={project.status} />
+        <StatCard
+          label="Sector"
+          value={project.sector ?? "—"}
+          className="capitalize"
+        />
+      </div>
     </div>
   );
 }

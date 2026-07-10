@@ -229,6 +229,179 @@ export function uploadDocument(
 }
 
 // ---------------------------------------------------------------------------
+// Risks
+// ---------------------------------------------------------------------------
+
+export type RiskCategory =
+  | "schedule"
+  | "budget"
+  | "operational"
+  | "communication"
+  | "compliance";
+
+export type RiskStatus = "open" | "acknowledged" | "mitigated" | "resolved";
+
+/** Severity is a 1..5 integer; higher = worse. */
+export type RiskSeverity = 1 | 2 | 3 | 4 | 5;
+
+export interface RiskSummary {
+  id: string;
+  project_id: string;
+  title: string;
+  category: RiskCategory;
+  severity: RiskSeverity;
+  likelihood: number; // 0..1
+  business_impact?: string | null;
+  confidence?: number | null; // 0..1
+  status: RiskStatus;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface RiskDetail extends RiskSummary {
+  description: string;
+  recommended_action?: string | null;
+  citations: Citation[];
+}
+
+export interface ListRisksFilters {
+  category?: RiskCategory;
+  severity_gte?: number;
+  status?: RiskStatus;
+}
+
+function toQuery(params: Record<string, string | number | undefined>): string {
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== ""
+  );
+  if (entries.length === 0) return "";
+  const usp = new URLSearchParams();
+  for (const [k, v] of entries) usp.set(k, String(v));
+  return `?${usp.toString()}`;
+}
+
+export async function listRisks(
+  projectId: string,
+  filters: ListRisksFilters | undefined,
+  opts: RequestOptions
+): Promise<RiskSummary[]> {
+  const qs = toQuery({
+    category: filters?.category,
+    severity_gte: filters?.severity_gte,
+    status: filters?.status,
+  });
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/risks${qs}`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as RiskSummary[];
+}
+
+export async function getRisk(
+  riskId: string,
+  opts: RequestOptions
+): Promise<RiskDetail> {
+  const res = await apiFetch(`/v1/risks/${riskId}`, { method: "GET" }, opts);
+  return (await res.json()) as RiskDetail;
+}
+
+export async function updateRiskStatus(
+  riskId: string,
+  status: Exclude<RiskStatus, "open">,
+  opts: RequestOptions
+): Promise<RiskSummary> {
+  const res = await apiFetch(
+    `/v1/risks/${riskId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+    opts
+  );
+  return (await res.json()) as RiskSummary;
+}
+
+export interface ScanResponse {
+  scan_id?: string;
+  status?: string;
+}
+
+export async function scanProjectRisks(
+  projectId: string,
+  opts: RequestOptions
+): Promise<ScanResponse> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/risks/scan`,
+    { method: "POST" },
+    opts
+  );
+  // Some APIs return 202 Accepted with no body — tolerate that.
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as ScanResponse;
+  } catch {
+    return {};
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Health
+// ---------------------------------------------------------------------------
+
+export interface HealthFactor {
+  key: string;
+  label?: string;
+  weight: number; // 0..1
+  score: number; // 0..100
+}
+
+export interface HealthSnapshot {
+  score: number; // 0..100
+  factors: HealthFactor[];
+  reasoning?: string | null;
+  computed_at: string;
+}
+
+export async function getHealth(
+  projectId: string,
+  opts: RequestOptions
+): Promise<HealthSnapshot> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/health`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as HealthSnapshot;
+}
+
+export async function recomputeHealth(
+  projectId: string,
+  opts: RequestOptions
+): Promise<HealthSnapshot> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/health/recompute`,
+    { method: "POST" },
+    opts
+  );
+  return (await res.json()) as HealthSnapshot;
+}
+
+export async function getHealthHistory(
+  projectId: string,
+  opts: RequestOptions
+): Promise<HealthSnapshot[]> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/health/history`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as HealthSnapshot[];
+}
+
+// ---------------------------------------------------------------------------
 // Chat (SSE-over-POST)
 // ---------------------------------------------------------------------------
 

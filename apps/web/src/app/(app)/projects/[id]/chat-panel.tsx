@@ -2,13 +2,17 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Send, FileText, Sparkles, AlertTriangle } from "lucide-react";
+import { Send, Sparkles, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { sendChatMessage, ApiError, type Citation } from "@/lib/api";
+import {
+  CitationChip,
+  citationKey,
+  dedupeCitations,
+} from "@/components/citation-chip";
 
 interface Message {
   id: string;
@@ -300,42 +304,3 @@ function MessageBubble({ message }: { message: Message }) {
   );
 }
 
-function CitationChip({
-  citation,
-  inline,
-}: {
-  citation: Citation;
-  inline?: boolean;
-}) {
-  const label = citation.document_filename ?? citation.document_id;
-  const page =
-    typeof citation.page === "number" ? `p.${citation.page}` : null;
-  return (
-    <Badge
-      variant={inline ? "outline" : "secondary"}
-      className="gap-1 font-normal"
-    >
-      <FileText className="size-3" />
-      <span className="max-w-[180px] truncate">{label}</span>
-      {page ? (
-        <span className="text-muted-foreground tabular-nums">{page}</span>
-      ) : null}
-    </Badge>
-  );
-}
-
-function citationKey(c: Citation): string {
-  return `${c.document_id}:${c.chunk_id ?? ""}:${c.page ?? ""}`;
-}
-
-function dedupeCitations(cs: Citation[]): Citation[] {
-  const seen = new Set<string>();
-  const out: Citation[] = [];
-  for (const c of cs) {
-    const k = citationKey(c);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(c);
-  }
-  return out;
-}
