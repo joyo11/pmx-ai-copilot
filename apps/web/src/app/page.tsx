@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+} from "@clerk/nextjs";
 
 const NAVY = "#0D2A5C";
 const MINT = "#5EE9C1";
@@ -112,30 +117,55 @@ export default function Home() {
               </span>
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                <button
-                  type="button"
-                  className="pmx-nav-link"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    height: 36,
-                    padding: "0 14px",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,0.85)",
-                    border: "1px solid transparent",
-                    background: "transparent",
-                    transition: "border-color .15s, color .15s",
-                  }}
-                >
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
-                <button
-                  type="button"
+              <SignedOut>
+                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button
+                    type="button"
+                    className="pmx-nav-link"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      height: 36,
+                      padding: "0 14px",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.85)",
+                      border: "1px solid transparent",
+                      background: "transparent",
+                      transition: "border-color .15s, color .15s",
+                    }}
+                  >
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button
+                    type="button"
+                    className="pmx-pill-mint"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      height: 38,
+                      padding: "0 18px",
+                      borderRadius: 999,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      background: MINT,
+                      color: NAVY,
+                      border: "none",
+                      transition: "background .15s",
+                    }}
+                  >
+                    Get started
+                    <ArrowSvg small />
+                  </button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <Link
+                  href="/dashboard"
                   className="pmx-pill-mint"
                   style={{
                     display: "inline-flex",
@@ -148,26 +178,14 @@ export default function Home() {
                     fontWeight: 600,
                     background: MINT,
                     color: NAVY,
-                    border: "none",
+                    textDecoration: "none",
                     transition: "background .15s",
                   }}
                 >
-                  Get started
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </button>
-              </SignUpButton>
+                  Open dashboard
+                  <ArrowSvg small />
+                </Link>
+              </SignedIn>
             </div>
           </div>
         </header>
@@ -289,62 +307,44 @@ export default function Home() {
                 justifyContent: "center",
               }}
             >
-              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
-                <button
-                  type="button"
+              <SignedOut>
+                <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button
+                    type="button"
+                    className="pmx-pill-mint"
+                    style={heroPillMint}
+                  >
+                    Open dashboard
+                    <ArrowSvg />
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal" forceRedirectUrl="/projects">
+                  <button
+                    type="button"
+                    className="pmx-pill-ghost"
+                    style={heroPillGhost}
+                  >
+                    Ask a question
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <Link
+                  href="/dashboard"
                   className="pmx-pill-mint"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    height: 46,
-                    padding: "0 24px",
-                    borderRadius: 999,
-                    fontSize: 15,
-                    fontWeight: 600,
-                    background: MINT,
-                    color: NAVY,
-                    border: "none",
-                    transition: "background .15s",
-                  }}
+                  style={{ ...heroPillMint, textDecoration: "none" }}
                 >
                   Open dashboard
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </button>
-              </SignUpButton>
-              <SignInButton mode="modal" forceRedirectUrl="/chat">
-                <button
-                  type="button"
+                  <ArrowSvg />
+                </Link>
+                <Link
+                  href="/projects"
                   className="pmx-pill-ghost"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    height: 46,
-                    padding: "0 22px",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: 999,
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: "#ffffff",
-                    background: "transparent",
-                    transition: "border-color .15s, background .15s",
-                  }}
+                  style={{ ...heroPillGhost, textDecoration: "none" }}
                 >
                   Ask a question
-                </button>
-              </SignInButton>
+                </Link>
+              </SignedIn>
             </div>
           </div>
         </section>
@@ -490,42 +490,32 @@ export default function Home() {
             >
               Ready to see risk before it costs you
             </h2>
-            <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
-              <button
-                type="button"
+            <SignedOut>
+              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                <button
+                  type="button"
+                  className="pmx-pill-mint"
+                  style={{ ...heroPillMint, marginTop: 30 }}
+                >
+                  Open dashboard
+                  <ArrowSvg />
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                href="/dashboard"
                 className="pmx-pill-mint"
                 style={{
+                  ...heroPillMint,
                   marginTop: 30,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  height: 46,
-                  padding: "0 24px",
-                  borderRadius: 999,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  background: MINT,
-                  color: NAVY,
-                  border: "none",
-                  transition: "background .15s",
+                  textDecoration: "none",
                 }}
               >
                 Open dashboard
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-              </button>
-            </SignUpButton>
+                <ArrowSvg />
+              </Link>
+            </SignedIn>
           </div>
         </section>
 
@@ -694,5 +684,53 @@ function Dot() {
         background: "rgba(255,255,255,0.25)",
       }}
     />
+  );
+}
+
+const heroPillMint: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  height: 46,
+  padding: "0 24px",
+  borderRadius: 999,
+  fontSize: 15,
+  fontWeight: 600,
+  background: MINT,
+  color: NAVY,
+  border: "none",
+  transition: "background .15s",
+};
+
+const heroPillGhost: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  height: 46,
+  padding: "0 22px",
+  border: "1px solid rgba(255,255,255,0.18)",
+  borderRadius: 999,
+  fontSize: 15,
+  fontWeight: 500,
+  color: "#ffffff",
+  background: "transparent",
+  transition: "border-color .15s, background .15s",
+};
+
+function ArrowSvg({ small }: { small?: boolean }) {
+  const size = small ? 15 : 16;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
   );
 }
