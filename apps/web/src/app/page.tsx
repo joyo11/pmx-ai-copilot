@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 
 const NAVY = "#0D2A5C";
 const MINT = "#5EE9C1";
@@ -13,6 +16,7 @@ export default function Home() {
         .pmx-pill-mint:hover { background: ${MINT_HOVER} !important; }
         .pmx-pill-ghost:hover { border-color: rgba(255,255,255,0.4) !important; background: rgba(255,255,255,0.05) !important; }
         .pmx-footer-link:hover { color: #ffffff !important; }
+        button.pmx-nav-link, button.pmx-pill-mint, button.pmx-pill-ghost { font-family: inherit; cursor: pointer; }
       `}</style>
 
       <div
@@ -108,58 +112,62 @@ export default function Home() {
               </span>
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Link
-                href="/dashboard"
-                className="pmx-nav-link"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: 36,
-                  padding: "0 14px",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "rgba(255,255,255,0.85)",
-                  border: "1px solid transparent",
-                  transition: "border-color .15s, color .15s",
-                  textDecoration: "none",
-                }}
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/dashboard"
-                className="pmx-pill-mint"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 7,
-                  height: 38,
-                  padding: "0 18px",
-                  borderRadius: 999,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  background: MINT,
-                  color: NAVY,
-                  transition: "background .15s",
-                  textDecoration: "none",
-                }}
-              >
-                Get started
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                <button
+                  type="button"
+                  className="pmx-nav-link"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 36,
+                    padding: "0 14px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "rgba(255,255,255,0.85)",
+                    border: "1px solid transparent",
+                    background: "transparent",
+                    transition: "border-color .15s, color .15s",
+                  }}
                 >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-              </Link>
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                <button
+                  type="button"
+                  className="pmx-pill-mint"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    height: 38,
+                    padding: "0 18px",
+                    borderRadius: 999,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    background: MINT,
+                    color: NAVY,
+                    border: "none",
+                    transition: "background .15s",
+                  }}
+                >
+                  Get started
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </SignUpButton>
             </div>
           </div>
         </header>
@@ -281,59 +289,62 @@ export default function Home() {
                 justifyContent: "center",
               }}
             >
-              <Link
-                href="/dashboard"
-                className="pmx-pill-mint"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  height: 46,
-                  padding: "0 24px",
-                  borderRadius: 999,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  background: MINT,
-                  color: NAVY,
-                  transition: "background .15s",
-                  textDecoration: "none",
-                }}
-              >
-                Open dashboard
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                <button
+                  type="button"
+                  className="pmx-pill-mint"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    height: 46,
+                    padding: "0 24px",
+                    borderRadius: 999,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    background: MINT,
+                    color: NAVY,
+                    border: "none",
+                    transition: "background .15s",
+                  }}
                 >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-              </Link>
-              <Link
-                href="/chat"
-                className="pmx-pill-ghost"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: 46,
-                  padding: "0 22px",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: 999,
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: "#ffffff",
-                  background: "transparent",
-                  transition: "border-color .15s, background .15s",
-                  textDecoration: "none",
-                }}
-              >
-                Ask a question
-              </Link>
+                  Open dashboard
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </SignUpButton>
+              <SignInButton mode="modal" forceRedirectUrl="/chat">
+                <button
+                  type="button"
+                  className="pmx-pill-ghost"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 46,
+                    padding: "0 22px",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 999,
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: "#ffffff",
+                    background: "transparent",
+                    transition: "border-color .15s, background .15s",
+                  }}
+                >
+                  Ask a question
+                </button>
+              </SignInButton>
             </div>
           </div>
         </section>
@@ -479,40 +490,42 @@ export default function Home() {
             >
               Ready to see risk before it costs you
             </h2>
-            <Link
-              href="/dashboard"
-              className="pmx-pill-mint"
-              style={{
-                marginTop: 30,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                height: 46,
-                padding: "0 24px",
-                borderRadius: 999,
-                fontSize: 15,
-                fontWeight: 600,
-                background: MINT,
-                color: NAVY,
-                transition: "background .15s",
-                textDecoration: "none",
-              }}
-            >
-              Open dashboard
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+              <button
+                type="button"
+                className="pmx-pill-mint"
+                style={{
+                  marginTop: 30,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  height: 46,
+                  padding: "0 24px",
+                  borderRadius: 999,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  background: MINT,
+                  color: NAVY,
+                  border: "none",
+                  transition: "background .15s",
+                }}
               >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </Link>
+                Open dashboard
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </button>
+            </SignUpButton>
           </div>
         </section>
 
