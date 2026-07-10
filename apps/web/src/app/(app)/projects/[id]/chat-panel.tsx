@@ -148,67 +148,116 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     }
   }
 
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-      {/* Conversation */}
-      <div className="flex h-[calc(100svh-16rem)] flex-col rounded-xl border">
-        <div
-          ref={scrollRef}
-          className="flex-1 space-y-4 overflow-y-auto p-4"
-        >
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <Sparkles className="size-5 text-muted-foreground" />
-              </div>
-              <div className="max-w-sm space-y-1">
-                <p className="text-sm font-medium">
-                  Ask about this project
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Grounded in the documents you upload. Citations will appear on
-                  the right as the answer streams in.
-                </p>
-              </div>
+  const [mobileTab, setMobileTab] = React.useState<"chat" | "sources">("chat");
+
+  const conversation = (
+    <div className="flex h-[calc(100svh-20rem)] lg:h-[calc(100svh-16rem)] flex-col rounded-xl border">
+      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
+        {messages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <Sparkles className="size-5 text-muted-foreground" />
             </div>
-          ) : (
-            messages.map((m) => <MessageBubble key={m.id} message={m} />)
-          )}
-        </div>
-        <form
-          onSubmit={onSubmit}
-          className="flex items-center gap-2 border-t p-3"
+            <div className="max-w-sm space-y-1">
+              <p className="text-sm font-medium">Ask about this project</p>
+              <p className="text-xs text-muted-foreground">
+                Grounded in the documents you upload. Citations appear beside
+                each answer as it streams in.
+              </p>
+            </div>
+          </div>
+        ) : (
+          messages.map((m) => <MessageBubble key={m.id} message={m} />)
+        )}
+      </div>
+      <form
+        onSubmit={onSubmit}
+        className="flex items-center gap-2 border-t p-3"
+        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      >
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about risks, budget, schedule…"
+          disabled={sending}
+          className="text-base md:text-sm"
+        />
+        <Button
+          type="submit"
+          size="icon"
+          className="size-11 md:size-9"
+          disabled={sending || !input.trim()}
         >
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about risks, budget, schedule…"
-            disabled={sending}
-          />
-          <Button type="submit" size="icon" disabled={sending || !input.trim()}>
-            <Send className="size-4" />
-            <span className="sr-only">Send</span>
-          </Button>
-        </form>
+          <Send className="size-4" />
+          <span className="sr-only">Send</span>
+        </Button>
+      </form>
+    </div>
+  );
+
+  const sourcesPanel = (
+    <aside className="rounded-xl border p-4">
+      <h3 className="mb-3 text-sm font-semibold">Sources</h3>
+      {sources.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Citations appear here as the assistant answers.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {sources.map((c, i) => (
+            <li key={citationKey(c) + i}>
+              <CitationChip citation={c} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </aside>
+  );
+
+  return (
+    <div>
+      {/* Mobile: tab switcher */}
+      <div className="mb-3 flex gap-1 rounded-lg border p-1 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileTab("chat")}
+          className={cn(
+            "flex-1 rounded-md py-2 text-sm font-medium transition-colors",
+            mobileTab === "chat"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground"
+          )}
+        >
+          Chat
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("sources")}
+          className={cn(
+            "flex-1 rounded-md py-2 text-sm font-medium transition-colors",
+            mobileTab === "sources"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground"
+          )}
+        >
+          Sources
+          {sources.length > 0 ? (
+            <span className="ml-1.5 rounded bg-muted px-1.5 text-xs tabular-nums">
+              {sources.length}
+            </span>
+          ) : null}
+        </button>
       </div>
 
-      {/* Sources panel */}
-      <aside className="rounded-xl border p-4">
-        <h3 className="mb-3 text-sm font-semibold">Sources</h3>
-        {sources.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            Citations will appear here as the assistant answers.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {sources.map((c, i) => (
-              <li key={citationKey(c) + i}>
-                <CitationChip citation={c} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-4">
+        {/* Show chat + sources side-by-side on lg, tabbed on mobile */}
+        <div className={cn("lg:block", mobileTab === "chat" ? "block" : "hidden")}>
+          {conversation}
+        </div>
+        <div className={cn("lg:block", mobileTab === "sources" ? "block" : "hidden")}>
+          {sourcesPanel}
+        </div>
+      </div>
     </div>
   );
 }

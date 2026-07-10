@@ -22,6 +22,15 @@ export default function Home() {
         .pmx-pill-ghost:hover { border-color: rgba(255,255,255,0.4) !important; background: rgba(255,255,255,0.05) !important; }
         .pmx-footer-link:hover { color: #ffffff !important; }
         button.pmx-nav-link, button.pmx-pill-mint, button.pmx-pill-ghost { font-family: inherit; cursor: pointer; }
+        /* Mobile tweaks */
+        @media (max-width: 640px) {
+          .pmx-chevron { display: none; }
+          .pmx-hero { padding: 72px 20px 80px !important; }
+          .pmx-hero-cta { width: 100%; justify-content: center; }
+          .pmx-features { grid-template-columns: 1fr !important; }
+          .pmx-header { padding: 0 16px !important; }
+          .pmx-header .pmx-hide-sm { display: none; }
+        }
       `}</style>
 
       <div
@@ -47,6 +56,7 @@ export default function Home() {
           }}
         >
           <div
+            className="pmx-header"
             style={{
               maxWidth: 1120,
               margin: "0 auto",
@@ -200,6 +210,7 @@ export default function Home() {
         >
           <svg
             aria-hidden="true"
+            className="pmx-chevron"
             width="640"
             height="760"
             viewBox="0 0 640 760"
@@ -231,6 +242,7 @@ export default function Home() {
             />
           </svg>
           <div
+            className="pmx-hero"
             style={{
               position: "relative",
               zIndex: 1,
@@ -352,6 +364,7 @@ export default function Home() {
         {/* Feature cards */}
         <section style={{ background: NAVY, padding: "88px 24px 96px" }}>
           <div
+            className="pmx-features"
             style={{
               maxWidth: 1120,
               margin: "0 auto",

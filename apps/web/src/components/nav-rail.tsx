@@ -27,11 +27,12 @@ const bottomItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+/** Desktop fixed rail (hidden below md). Mobile uses NavDrawer via TopBar. */
 export function NavRail() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-svh w-16 flex-col border-r bg-sidebar text-sidebar-foreground">
+    <aside className="hidden md:flex h-svh w-16 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center justify-center border-b">
         <Link
           href="/"
@@ -98,3 +99,7 @@ function NavLink({
     </Tooltip>
   );
 }
+
+/** Full list of nav destinations for consumers (drawer, etc.). */
+export const NAV_ITEMS = items;
+export const NAV_BOTTOM_ITEMS = bottomItems;
