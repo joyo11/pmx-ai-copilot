@@ -1,24 +1,28 @@
 """FastAPI request-scoped dependencies.
 
-M0.3 landed the async DB session. M0.4 layered Clerk auth on top. This file
-now exposes both:
+M0.3 landed the async DB session. M0.4 layered Clerk auth on top. M1 wires
+the auth mirror to a real Postgres upsert:
 
 - ``get_db`` / ``DBSession`` — request-scoped :class:`AsyncSession`.
 - ``get_current_user`` / ``require_current_user`` — Clerk-authenticated user.
 
-The DB-mirror hook for Clerk users lives in ``_mirror_user_to_db`` and stays
-a no-op until we wire the real upsert against the ``users`` / ``organizations``
-tables. Kept intentionally decoupled so ``/v1/me`` works off raw Clerk claims
-even when Postgres is offline.
+``_mirror_user_to_db`` now performs an idempotent upsert into ``organizations``
+and ``users`` on first-touch, using the sync engine (auth is a sync path) so
+projects/documents/chat can rely on the FK relationships. It stays a best-effort
+side-effect: DB failures log-and-swallow so ``/v1/me`` still works when
+Postgres is offline (matches M0.4's tolerance contract).
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pmx_api.auth.clerk import (
@@ -27,7 +31,13 @@ from pmx_api.auth.clerk import (
     verify_clerk_jwt,
 )
 from pmx_api.config import Settings, get_settings
-from pmx_api.db.session import get_async_session
+from pmx_api.db.session import (
+    DatabaseNotConfiguredError,
+    get_async_session,
+    get_sync_sessionmaker,
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Database
@@ -74,14 +84,105 @@ def _extract_bearer_token(request: Request) -> str | None:
     return token.strip()
 
 
-def _mirror_user_to_db(claims: ClerkClaims) -> None:
-    """Upsert the Clerk user + org into our Postgres tables.
+_DEFAULT_ROLE_FOR_MIRROR = "project_manager"
+"""Fallback role when Clerk doesn't hand us an ``org_role`` we recognise.
 
-    Placeholder until we wire the real upsert against the ``users`` and
-    ``organizations`` models from M0.3. Kept as a separate function so a
-    follow-up PR can drop the SQL in without touching auth flow.
+M0.3's `users.role` CHECK constraint pins the enum. Clerk sends role slugs
+like ``org:admin`` / ``org:member`` which don't match — we normalise them
+here rather than at query sites. Follow-up: proper role-mapping table.
+"""
+
+
+def _normalise_role(clerk_role: str | None) -> str:
+    """Map Clerk org role slugs onto the ``users.role`` enum from DESIGN §4.
+
+    Clerk uses ``org:admin`` / ``org:member`` / custom slugs. Until we ship a
+    role-mapping UI we default anyone we don't recognise to ``project_manager``.
     """
-    _ = claims  # will feed the upsert
+    if not clerk_role:
+        return _DEFAULT_ROLE_FOR_MIRROR
+    tail = clerk_role.split(":")[-1]  # strip "org:" prefix if present
+    return (
+        tail
+        if tail
+        in {
+            "project_manager",
+            "senior_pm",
+            "program_manager",
+            "construction_manager",
+            "executive",
+            "owner_rep",
+        }
+        else _DEFAULT_ROLE_FOR_MIRROR
+    )
+
+
+def _mirror_user_to_db(claims: ClerkClaims) -> None:
+    """Upsert the Clerk user + org into ``organizations`` and ``users``.
+
+    Idempotent by design: uses ``ON CONFLICT`` on the natural keys Clerk gives
+    us (``clerk_org_id`` / ``clerk_user_id``). Runs on the sync engine because
+    ``get_current_user`` is a sync dependency; the write is tiny (two rows)
+    and gated on the user actually being present in the request.
+
+    Failures are logged and swallowed. Auth already succeeded at this point —
+    the mirror is a "make FKs work" side-effect, not a gate on the response.
+    Endpoints that depend on the mirrored row will surface their own error.
+    """
+    try:
+        session_factory = get_sync_sessionmaker()
+    except DatabaseNotConfiguredError:
+        # No DB configured (e.g. running /v1/me in a local sandbox). Skip.
+        return
+
+    org_id = claims.org_id
+    if org_id is None:
+        # Personal-mode Clerk users have no active org — nothing FK-worthy to
+        # write yet. When they pick an org, the next request mirrors them.
+        return
+
+    role = _normalise_role(claims.org_role)
+    email = claims.email or f"{claims.sub}@placeholder.pmx"
+    org_name = claims.org_slug or org_id
+
+    try:
+        with session_factory.begin() as session:
+            # Upsert the organization first so the users FK resolves.
+            session.execute(
+                text(
+                    """
+                    INSERT INTO organizations (clerk_org_id, name)
+                    VALUES (:clerk_org_id, :name)
+                    ON CONFLICT (clerk_org_id) DO UPDATE
+                        SET name = EXCLUDED.name
+                    """
+                ),
+                {"clerk_org_id": org_id, "name": org_name},
+            )
+            # Upsert the user, resolving org_id via the row we just wrote.
+            session.execute(
+                text(
+                    """
+                    INSERT INTO users (clerk_user_id, org_id, email, role)
+                    SELECT :clerk_user_id, o.id, :email, :role
+                    FROM organizations o
+                    WHERE o.clerk_org_id = :clerk_org_id
+                    ON CONFLICT (clerk_user_id) DO UPDATE
+                        SET org_id = EXCLUDED.org_id,
+                            email  = EXCLUDED.email,
+                            role   = EXCLUDED.role
+                    """
+                ),
+                {
+                    "clerk_user_id": claims.sub,
+                    "clerk_org_id": org_id,
+                    "email": email,
+                    "role": role,
+                },
+            )
+    except SQLAlchemyError as exc:
+        # DB blip. Log and move on — auth succeeded, response is still valid.
+        logger.warning("Failed to mirror Clerk user %s: %s", claims.sub, exc)
 
 
 def get_current_user(
@@ -144,3 +245,61 @@ def require_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+# ---------------------------------------------------------------------------
+# Tenant resolution
+# ---------------------------------------------------------------------------
+
+
+@dataclass(slots=True, frozen=True)
+class TenantContext:
+    """Internal UUIDs for the current user + their org.
+
+    ``CurrentUser`` carries Clerk *string* IDs (``user_...``, ``org_...``).
+    Everything downstream — projects, documents, chunks, chat sessions — FKs
+    against our internal UUIDs. This resolver bridges the two after
+    ``_mirror_user_to_db`` has ensured the rows exist.
+    """
+
+    user_uuid: str  # UUIDs stringified so mypy stays happy across sync/async
+    org_uuid: str
+
+
+async def resolve_tenant(
+    db: AsyncSession,
+    current: CurrentUser,
+) -> TenantContext:
+    """Resolve the current Clerk user into internal ``users.id`` + ``org_id``.
+
+    Raises 401 if the user has no active Clerk org (personal mode — cannot
+    own projects) or 500 if the mirror never ran (should be impossible on
+    the auth path, but we surface it clearly instead of a silent NULL FK).
+    """
+    if current.org_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Active Clerk organization required",
+        )
+
+    row = (
+        await db.execute(
+            text(
+                """
+                SELECT u.id AS user_id, u.org_id AS org_id
+                FROM users u
+                WHERE u.clerk_user_id = :clerk_user_id
+                """
+            ),
+            {"clerk_user_id": current.user_id},
+        )
+    ).one_or_none()
+
+    if row is None:
+        # Mirror hasn't landed (DB was down when auth ran, most likely).
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="User mirror missing; retry the request",
+        )
+
+    return TenantContext(user_uuid=str(row.user_id), org_uuid=str(row.org_id))
