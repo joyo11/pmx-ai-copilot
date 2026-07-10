@@ -74,3 +74,10 @@ class Risk(Base):
     )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     citations: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB, nullable=True)
+    # ``metadata`` carries the rules-engine ``rule_key`` (see services.risks) so
+    # re-scans dedupe by natural identity instead of piling duplicate rows onto
+    # the same underlying condition. Attribute renamed ``metadata_`` because
+    # ``metadata`` collides with SQLAlchemy's declarative ``Base.metadata``.
+    metadata_: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
