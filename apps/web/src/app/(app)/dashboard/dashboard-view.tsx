@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Activity,
   AlertCircle,
@@ -120,6 +121,7 @@ export function DashboardView() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
+          index={0}
           label="Active projects"
           value={activeCount.toString()}
           Icon={FolderKanban}
@@ -130,6 +132,7 @@ export function DashboardView() {
           }
         />
         <StatCard
+          index={1}
           label="At risk"
           value={atRisk.toString()}
           Icon={AlertCircle}
@@ -142,12 +145,14 @@ export function DashboardView() {
           }
         />
         <StatCard
+          index={2}
           label="Total documents"
           value={totalDocs.toString()}
           Icon={FileText}
           hint={totalDocs === 0 ? "Upload to begin" : "across all projects"}
         />
         <StatCard
+          index={3}
           label="Avg health"
           value={avgHealth?.toString() ?? "—"}
           Icon={Activity}
@@ -212,24 +217,39 @@ function StatCard({
   value,
   Icon,
   hint,
+  index,
 }: {
   label: string;
   value: string;
   Icon: React.ComponentType<{ className?: string }>;
   hint: string;
+  index: number;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <Card>
-      <CardHeader>
-        <CardDescription className="flex items-center justify-between">
-          <span>{label}</span>
-          <Icon className="size-4 text-muted-foreground" />
-        </CardDescription>
-        <CardTitle className="text-3xl font-semibold tabular-nums">
-          {value}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-xs text-muted-foreground">{hint}</CardContent>
-    </Card>
+    <motion.div
+      initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: reduceMotion ? 0 : 0.28,
+        delay: reduceMotion ? 0 : index * 0.06,
+        ease: "easeOut",
+      }}
+    >
+      <Card>
+        <CardHeader>
+          <CardDescription className="flex items-center justify-between">
+            <span>{label}</span>
+            <Icon className="size-4 text-muted-foreground" />
+          </CardDescription>
+          <CardTitle className="text-3xl font-semibold tabular-nums">
+            {value}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-xs text-muted-foreground">
+          {hint}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

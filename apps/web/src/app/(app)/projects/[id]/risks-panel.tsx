@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
+import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -335,13 +336,10 @@ export function RisksPanel({
                 {risks.map((r) => {
                   const sev = SEVERITY_STYLES[r.severity] ?? SEVERITY_STYLES[3];
                   return (
-                    <tr
+                    <RiskRow
                       key={r.id}
                       onClick={() => void openDetail(r.id)}
-                      className={cn(
-                        "cursor-pointer border-t border-l-4 transition-colors hover:bg-accent/40",
-                        sev.border
-                      )}
+                      borderClass={sev.border}
                     >
                       <td className="px-3 py-3">
                         <span
@@ -388,7 +386,7 @@ export function RisksPanel({
                           onAction={(status) => void onStatusChange(r.id, status)}
                         />
                       </td>
-                    </tr>
+                    </RiskRow>
                   );
                 })}
               </tbody>
@@ -453,6 +451,39 @@ export function RisksPanel({
         onStatusChange={onStatusChange}
       />
     </div>
+  );
+}
+
+function RiskRow({
+  children,
+  onClick,
+  borderClass,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  borderClass: string;
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.tr
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer border-t border-l-4 transition-colors hover:bg-accent/40",
+        borderClass
+      )}
+      whileHover={
+        reduceMotion
+          ? undefined
+          : {
+              scale: 1.005,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            }
+      }
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      style={{ transformOrigin: "left center" }}
+    >
+      {children}
+    </motion.tr>
   );
 }
 

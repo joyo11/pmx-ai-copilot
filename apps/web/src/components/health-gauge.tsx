@@ -1,6 +1,13 @@
 "use client";
 
 import * as React from "react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "motion/react";
 import { ChevronDown, RefreshCw, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -136,7 +143,6 @@ export function HealthGauge({
 
   const score = Math.max(0, Math.min(100, Math.round(snapshot.score)));
   const color = colorFor(score);
-  const dashOffset = CIRCUMFERENCE * (1 - score / 100);
   const factors = snapshot.factors ?? [];
   // Weight-normalized fill so a low-weight factor doesn't dominate visually.
   const totalWeight =
@@ -147,38 +153,15 @@ export function HealthGauge({
       <CardContent className="grid gap-6 py-6 md:grid-cols-[auto_1fr] md:items-start">
         <div className="flex flex-col items-center gap-3 md:items-start">
           <div className="relative size-36">
-            <svg
-              viewBox="0 0 128 128"
-              className="size-full -rotate-90"
-              aria-hidden
-            >
-              <circle
-                cx="64"
-                cy="64"
-                r={RADIUS}
-                strokeWidth="10"
-                className="fill-none stroke-muted"
-              />
-              <circle
-                cx="64"
-                cy="64"
-                r={RADIUS}
-                strokeWidth="10"
-                strokeLinecap="round"
-                className={cn("fill-none transition-all", color.ring)}
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={dashOffset}
-              />
-            </svg>
+            <AnimatedRing score={score} ringClass={color.ring} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span
+              <AnimatedScore
+                score={score}
                 className={cn(
                   "text-4xl font-semibold tabular-nums leading-none",
                   color.text
                 )}
-              >
-                {score}
-              </span>
+              />
               <span className="mt-1 text-xs text-muted-foreground">
                 / 100
               </span>
@@ -224,11 +207,12 @@ export function HealthGauge({
               </p>
             ) : (
               <ul className="space-y-2">
-                {factors.slice(0, 4).map((f) => (
+                {factors.slice(0, 4).map((f, i) => (
                   <FactorBar
                     key={f.key}
                     factor={f}
                     weightShare={(f.weight ?? 0) / totalWeight}
+                    index={i}
                   />
                 ))}
               </ul>
@@ -267,10 +251,13 @@ export function HealthGauge({
 function FactorBar({
   factor,
   weightShare,
+  index,
 }: {
   factor: HealthFactor;
   weightShare: number;
+  index: number;
 }) {
+  const reduceMotion = useReducedMotion();
   const score = Math.max(0, Math.min(100, Math.round(factor.score ?? 0)));
   const color = colorFor(score);
   const label =
@@ -290,11 +277,99 @@ function FactorBar({
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn("h-full rounded-full transition-all", color.bg)}
-          style={{ width: `${score}%` }}
+        <motion.div
+          key={`${factor.key}-${score}`}
+          className={cn("h-full rounded-full", color.bg)}
+          initial={reduceMotion ? { width: `${score}%` } : { width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : {
+                  duration: 0.8,
+                  delay: 0.1 + index * 0.08,
+                  ease: [0.16, 1, 0.3, 1],
+                }
+          }
         />
       </div>
     </li>
+  );
+}
+
+function AnimatedScore({
+  score,
+  className,
+}: {
+  score: number;
+  className?: string;
+}) {
+  const reduceMotion = useReducedMotion();
+  const mv = useMotionValue(reduceMotion ? score : 0);
+  const rounded = useTransform(mv, (v) => Math.round(v));
+  const [display, setDisplay] = React.useState(reduceMotion ? score : 0);
+
+  // Subscribe to motion-value changes and mirror them into React state.
+  // `rounded.on("change")` fires from motion's animation frame — not a
+  // synchronous setState in the effect body.
+  React.useEffect(() => {
+    return rounded.on("change", (v) => setDisplay(v));
+  }, [rounded]);
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      // Snap the motion value; the subscription above updates `display`.
+      mv.set(score);
+      return;
+    }
+    const controls = animate(mv, score, {
+      duration: 0.8,
+      ease: [0.16, 1, 0.3, 1],
+    });
+    return () => controls.stop();
+  }, [mv, score, reduceMotion]);
+
+  return <span className={className}>{display}</span>;
+}
+
+function AnimatedRing({
+  score,
+  ringClass,
+}: {
+  score: number;
+  ringClass: string;
+}) {
+  const reduceMotion = useReducedMotion();
+  const target = CIRCUMFERENCE * (1 - score / 100);
+  return (
+    <svg viewBox="0 0 128 128" className="size-full -rotate-90" aria-hidden>
+      <circle
+        cx="64"
+        cy="64"
+        r={RADIUS}
+        strokeWidth="10"
+        className="fill-none stroke-muted"
+      />
+      <motion.circle
+        cx="64"
+        cy="64"
+        r={RADIUS}
+        strokeWidth="10"
+        strokeLinecap="round"
+        className={cn("fill-none", ringClass)}
+        strokeDasharray={CIRCUMFERENCE}
+        initial={
+          reduceMotion
+            ? { strokeDashoffset: target }
+            : { strokeDashoffset: CIRCUMFERENCE }
+        }
+        animate={{ strokeDashoffset: target }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+        }
+      />
+    </svg>
   );
 }
