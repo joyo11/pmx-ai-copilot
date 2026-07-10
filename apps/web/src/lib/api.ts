@@ -75,16 +75,23 @@ export type ChatEvent =
 // Internals
 // ---------------------------------------------------------------------------
 
+/** Signalled by callers so their error UI can render friendly copy instead of crashing. */
+export class ApiNotConfiguredError extends Error {
+  constructor() {
+    super(
+      "PMX API URL is not configured. Set NEXT_PUBLIC_API_URL in Vercel env."
+    );
+    this.name = "ApiNotConfiguredError";
+  }
+}
+
 function apiBase(): string {
   const url =
     typeof process !== "undefined"
       ? process.env.NEXT_PUBLIC_API_URL
       : undefined;
   if (!url) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local " +
-        "(see .env.example)."
-    );
+    throw new ApiNotConfiguredError();
   }
   return url.replace(/\/+$/, "");
 }

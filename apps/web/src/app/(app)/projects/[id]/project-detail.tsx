@@ -301,6 +301,7 @@ function OverviewPanel({
         error={healthError}
         onRecompute={onRecomputeHealth}
         recomputing={recomputing}
+        hasDocuments={documentCount > 0}
       />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Documents" value={String(documentCount)} />

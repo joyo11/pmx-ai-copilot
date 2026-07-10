@@ -15,6 +15,8 @@ interface HealthGaugeProps {
   error?: string | null;
   onRecompute?: () => void | Promise<void>;
   recomputing?: boolean;
+  /** When true, the "Compute health" button is disabled with an upload hint. */
+  hasDocuments?: boolean;
 }
 
 /** Bucket color used by the ring, number, and the "why?" pill. */
@@ -62,6 +64,7 @@ export function HealthGauge({
   error,
   onRecompute,
   recomputing,
+  hasDocuments = true,
 }: HealthGaugeProps) {
   const [showReasoning, setShowReasoning] = React.useState(false);
 
@@ -109,14 +112,16 @@ export function HealthGauge({
         <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
           <p className="text-sm font-medium">No health score yet</p>
           <p className="max-w-sm text-xs text-muted-foreground">
-            Upload documents and run a risk scan to compute a health score for
-            this project.
+            {hasDocuments
+              ? "Run a risk scan or compute the score to see how this project is doing."
+              : "Upload at least one document first, then compute a health score."}
           </p>
           {onRecompute ? (
             <Button
               size="sm"
               onClick={() => void onRecompute()}
-              disabled={recomputing}
+              disabled={recomputing || !hasDocuments}
+              title={!hasDocuments ? "Upload a document first" : undefined}
             >
               <RefreshCw
                 className={cn("size-4", recomputing && "animate-spin")}
