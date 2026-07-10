@@ -53,12 +53,24 @@ app = create_app()
 
 
 def main() -> None:
-    """CLI entry: `uv run pmx-api` for a local dev server."""
+    """CLI entry: `uv run pmx-api`.
+
+    Binds to $HOST / $PORT when set (Render sets $PORT for web services and
+    requires 0.0.0.0), otherwise falls back to local dev defaults with reload.
+    """
+    import os
+
     import uvicorn
+
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8000"))
+    # Reload is only useful locally; disable it whenever HOST/PORT come from env
+    # (i.e. anywhere we're actually serving traffic).
+    reload = "HOST" not in os.environ and "PORT" not in os.environ
 
     uvicorn.run(
         "pmx_api.main:app",
-        host="127.0.0.1",
-        port=8000,
-        reload=True,
+        host=host,
+        port=port,
+        reload=reload,
     )

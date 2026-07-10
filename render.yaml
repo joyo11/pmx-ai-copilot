@@ -1,0 +1,41 @@
+# Render Blueprint for PMX AI API.
+# Sync via Render dashboard → Blueprints → New Blueprint Instance → point at this repo.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: pmx-api
+    runtime: python
+    plan: starter
+    region: oregon
+    rootDir: apps/api
+    pythonVersion: "3.12"
+    autoDeploy: true
+    branch: main
+    healthCheckPath: /v1/health
+    buildCommand: pip install uv && uv sync --frozen
+    startCommand: uv run pmx-api
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ALLOW_ORIGINS
+        value: https://pmx-ai-copilot.vercel.app
+      - key: LOGFIRE_SEND_TO_LOGFIRE
+        value: "true"
+      - key: HOST
+        value: 0.0.0.0
+      # Render injects PORT automatically for web services; declared here for clarity.
+      - key: PORT
+        value: "10000"
+      # Secrets — set in Render dashboard, never committed.
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CLERK_JWT_ISSUER
+        sync: false
+      - key: LOGFIRE_TOKEN
+        sync: false
