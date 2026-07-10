@@ -22,13 +22,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { NewProjectDialog } from "@/components/new-project-dialog";
-import { listProjects, ApiError, type Project } from "@/lib/api";
+import { listProjects, listRisks, ApiError, type Project } from "@/lib/api";
 
 export function DashboardView() {
   const { getToken, isLoaded } = useAuth();
   const [projects, setProjects] = React.useState<Project[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [atRiskCount, setAtRiskCount] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!isLoaded) return;
@@ -37,6 +38,29 @@ export function DashboardView() {
         const token = await getToken();
         const rows = await listProjects({ token });
         setProjects(rows);
+
+        // Portfolio-wide "at risk" = sum of open critical (sev>=4) risks across
+        // all projects. One query per project is fine at M2 scale; we'll batch
+        // this into a dedicated endpoint when it starts to matter.
+        if (rows.length > 0) {
+          const counts = await Promise.all(
+            rows.map(async (p) => {
+              try {
+                const risks = await listRisks(
+                  p.id,
+                  { severity_gte: 4, status: "open" },
+                  { token }
+                );
+                return risks.length;
+              } catch {
+                return 0;
+              }
+            })
+          );
+          setAtRiskCount(counts.reduce((a, b) => a + b, 0));
+        } else {
+          setAtRiskCount(0);
+        }
       } catch (err) {
         const msg =
           err instanceof ApiError
@@ -72,9 +96,13 @@ export function DashboardView() {
     healths.length > 0
       ? Math.round(healths.reduce((a, b) => a + b, 0) / healths.length)
       : null;
-  const atRisk = projects.filter(
-    (p) => typeof p.health_score === "number" && p.health_score < 60
-  ).length;
+  // Prefer the real critical-risk sum when it's landed; fall back to
+  // health-score heuristic until the risks queries resolve.
+  const atRisk =
+    atRiskCount ??
+    projects.filter(
+      (p) => typeof p.health_score === "number" && p.health_score < 60
+    ).length;
 
   return (
     <>
@@ -106,9 +134,11 @@ export function DashboardView() {
           value={atRisk.toString()}
           Icon={AlertCircle}
           hint={
-            healths.length === 0
-              ? "Health scores pending"
-              : `${healths.length} scored`
+            atRiskCount === null
+              ? "Scanning projects…"
+              : atRiskCount === 0
+                ? "No critical open risks"
+                : `${atRisk} critical open`
           }
         />
         <StatCard
