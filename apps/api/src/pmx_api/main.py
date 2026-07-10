@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pmx_api.config import get_settings
 from pmx_api.observability import configure_observability
-from pmx_api.routers import health, me
+from pmx_api.routers import chat, documents, health, me, projects
 
 
 @asynccontextmanager
@@ -41,6 +41,9 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(me.router)
+    app.include_router(projects.router)
+    app.include_router(documents.router)
+    app.include_router(chat.router)
 
     # Instrumentation runs last, after all routes are mounted, otherwise
     # OpenTelemetry's route walker trips on `_IncludedRouter`.

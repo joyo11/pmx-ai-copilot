@@ -35,11 +35,21 @@ class Settings(BaseSettings):
     logfire_token: str | None = None
     logfire_send_to_logfire: bool = False  # opt-in in prod
 
-    # LLM (populated in M1)
+    # LLM (M1). Keys read from env; leave commented in .env.example.
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
 
-    # Storage (populated in M1)
+    # M1 chat + retrieval knobs. Model IDs default to what §9 pins down; adjust
+    # via env if Anthropic/OpenAI relabel a checkpoint.
+    chat_model: str = "claude-sonnet-4-6"
+    embedding_model: str = "text-embedding-3-large"
+    retrieval_top_k: int = 8
+
+    # Local disk storage for M1. R2 lands in M2 (see DESIGN §10 + DR-002).
+    # Relative paths are resolved against the API package's working directory.
+    storage_dir: str = "storage"
+
+    # R2 (M2 — kept here so M2 doesn't need another config PR).
     r2_endpoint: str | None = None
     r2_access_key_id: str | None = None
     r2_secret_access_key: str | None = None
