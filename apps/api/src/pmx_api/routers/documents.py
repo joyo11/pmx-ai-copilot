@@ -11,10 +11,14 @@ Design notes:
   schema change.
 * Extraction runs **inline** on the request. That's acceptable for M1 (PDFs
   are small, and the demo isn't concurrent). M2 hands this off to RQ.
+* **M2 update:** on successful ingest we fire a risk scan + health
+  recompute for the project. Errors log but don't affect the upload
+  response — the ingest already succeeded and the caller cares about that.
 """
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -41,6 +45,10 @@ from pmx_api.deps import (
     resolve_tenant,
 )
 from pmx_api.pipeline.extract import extract_and_embed_document
+from pmx_api.services import health as health_service
+from pmx_api.services import risks as risks_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/projects/{project_id}/documents", tags=["documents"])
 
@@ -187,6 +195,27 @@ async def upload_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Extraction failed: {exc}",
         ) from exc
+
+    # M2: fire risk scan + health recompute post-ingest. Best-effort — the
+    # upload has already succeeded, so we log and swallow anything the
+    # downstream services throw. Explicit try/except per step so a broken
+    # risk scan doesn't skip the health snapshot (or vice versa).
+    try:
+        await risks_service.scan_project(db, project.id, settings)
+    except Exception:
+        logger.exception(
+            "Post-ingest risk scan failed for project %s (document %s)",
+            project.id,
+            document.id,
+        )
+    try:
+        await health_service.snapshot_project_health(db, project.id)
+    except Exception:
+        logger.exception(
+            "Post-ingest health snapshot failed for project %s (document %s)",
+            project.id,
+            document.id,
+        )
 
     await db.refresh(document)
     return DocumentUploadResponse(
