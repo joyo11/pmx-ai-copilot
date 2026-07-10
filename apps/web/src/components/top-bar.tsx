@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
+import { UserButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 
@@ -29,6 +30,7 @@ export function TopBar({ title }: { title: string }) {
             <Moon className="size-4" />
           )}
         </Button>
+        <UserButton afterSignOutUrl="/" />
       </div>
     </header>
   );

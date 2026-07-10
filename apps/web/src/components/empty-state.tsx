@@ -24,7 +24,7 @@ export function EmptyState({
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         {actionLabel ? (
-          <Button onClick={onAction} disabled>
+          <Button onClick={onAction} disabled={!onAction}>
             {actionLabel}
           </Button>
         ) : null}
