@@ -14,12 +14,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -389,8 +383,26 @@ function OverviewPanel({
   onRecomputeHealth: () => void | Promise<void>;
   recomputing: boolean;
 }) {
+  // Contract value (GMP) formatted compact, e.g. $48.0M.
+  const contract = compactUSD(project.budget_total_cents);
+
+  // Schedule variance: forecast later than planned = slipping (red).
+  const scheduleWeeks = weeksBetween(
+    project.planned_end_date,
+    project.forecast_end_date
+  );
+
+  // Budget variance: spent as a share of the total contract value.
+  const total = project.budget_total_cents;
+  const spent = project.budget_spent_cents;
+  const budgetPct =
+    typeof total === "number" && total > 0 && typeof spent === "number"
+      ? Math.round((spent / total) * 100)
+      : null;
+
   return (
-    <div className="space-y-4">
+    <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
+      {/* LEFT: big health gauge + contributing factors (self-contained card). */}
       <HealthGauge
         snapshot={health}
         loading={healthLoading}
@@ -399,38 +411,82 @@ function OverviewPanel({
         recomputing={recomputing}
         hasDocuments={documentCount > 0}
       />
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Documents" value={String(documentCount)} />
-        <StatCard label="Status" value={project.status} />
-        <StatCard
-          label="Sector"
-          value={project.sector ?? "—"}
-          className="capitalize"
+
+      {/* RIGHT: quick-stat tiles alongside the gauge. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:content-start">
+        <QuickStat
+          label="Contract value"
+          value={contract ?? "—"}
+          valueColor="#E7EEF7"
+          sub="GMP"
+        />
+        <QuickStat
+          label="Schedule variance"
+          value={
+            scheduleWeeks === null || scheduleWeeks === 0
+              ? "on track"
+              : `${scheduleWeeks > 0 ? "−" : "+"}${Math.abs(scheduleWeeks)} wk`
+          }
+          valueColor={
+            scheduleWeeks && scheduleWeeks > 0
+              ? "#F65563"
+              : scheduleWeeks && scheduleWeeks < 0
+                ? "#35C97F"
+                : "#35C97F"
+          }
+          sub={
+            scheduleWeeks && scheduleWeeks > 0
+              ? "behind plan"
+              : scheduleWeeks && scheduleWeeks < 0
+                ? "ahead of plan"
+                : "vs. baseline"
+          }
+        />
+        <QuickStat
+          label="Budget variance"
+          value={budgetPct === null ? "—" : `${budgetPct}%`}
+          valueColor={
+            budgetPct === null
+              ? "#E7EEF7"
+              : budgetPct >= 100
+                ? "#F65563"
+                : budgetPct >= 80
+                  ? "#F5893D"
+                  : "#35C97F"
+          }
+          sub={budgetPct === null ? "no data" : "of GMP spent"}
+          className="col-span-2 sm:col-span-1"
         />
       </div>
     </div>
   );
 }
 
-function StatCard({
+function QuickStat({
   label,
   value,
+  valueColor,
+  sub,
   className,
 }: {
   label: string;
   value: string;
+  valueColor: string;
+  sub: string;
   className?: string;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle
-          className={cn("text-2xl font-semibold tabular-nums", className)}
-        >
-          {value}
-        </CardTitle>
-      </CardHeader>
-    </Card>
+    <div className={cn("rounded-2xl border bg-card p-4", className)}>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className="mt-1.5 font-display text-2xl font-bold tabular-nums leading-none"
+        style={{ color: valueColor }}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+    </div>
   );
 }

@@ -79,7 +79,7 @@ export function DashboardView() {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+          <Skeleton key={i} className="h-28 rounded-2xl" />
         ))}
       </div>
     );
@@ -177,38 +177,165 @@ export function DashboardView() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent projects</CardTitle>
-            <CardDescription>
+        <div className="space-y-3">
+          <div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Recent projects
+            </h2>
+            <p className="text-sm text-muted-foreground">
               Newest first. Click one to open its risks, documents, and chat.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {projects.slice(0, 5).map((p) => (
-              <Link
-                key={p.id}
-                href={`/projects/${p.id}`}
-                className="flex items-center justify-between rounded-md border p-3 text-sm transition-colors hover:bg-accent/40"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{p.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {p.client ?? "—"}
-                    {p.sector ? ` · ${p.sector}` : ""}
-                  </p>
-                </div>
-                <span className="tabular-nums text-xs text-muted-foreground">
-                  Health {p.health_score ?? "—"}
-                </span>
-              </Link>
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {projects.slice(0, 6).map((p, i) => (
+              <ProjectCard key={p.id} project={p} index={i} />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       <NewProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
+  );
+}
+
+type Band = {
+  label: string;
+  color: string;
+};
+
+function healthBand(score: number | null): Band {
+  if (score === null) return { label: "No score", color: "#1B3E63" };
+  if (score >= 75) return { label: "Healthy", color: "#35C97F" };
+  if (score >= 50) return { label: "On watch", color: "#F2B233" };
+  if (score >= 30) return { label: "At risk", color: "#F5893D" };
+  return { label: "Critical", color: "#F65563" };
+}
+
+function formatSector(sector: Project["sector"]): string | null {
+  if (!sector) return null;
+  return sector.charAt(0).toUpperCase() + sector.slice(1);
+}
+
+const RING_RADIUS = 31;
+const RING_CIRC = 2 * Math.PI * RING_RADIUS; // ≈ 194.8
+
+function HealthRing({ score }: { score: number | null }) {
+  const band = healthBand(score);
+  const hasScore = typeof score === "number";
+  const offset = hasScore ? RING_CIRC * (1 - (score as number) / 100) : RING_CIRC;
+
+  return (
+    <div className="relative size-[76px] shrink-0">
+      <svg
+        viewBox="0 0 76 76"
+        className="size-[76px] -rotate-90"
+        aria-hidden="true"
+      >
+        <circle
+          cx="38"
+          cy="38"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="#1B3E63"
+          strokeWidth={7}
+        />
+        {hasScore ? (
+          <circle
+            cx="38"
+            cy="38"
+            r={RING_RADIUS}
+            fill="none"
+            stroke={band.color}
+            strokeWidth={7}
+            strokeLinecap="round"
+            strokeDasharray={RING_CIRC}
+            strokeDashoffset={offset}
+          />
+        ) : null}
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="font-display text-[24px] font-bold tabular-nums text-foreground">
+          {hasScore ? score : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProjectCard({ project, index }: { project: Project; index: number }) {
+  const reduceMotion = useReducedMotion();
+  const band = healthBand(project.health_score);
+  const sector = formatSector(project.sector);
+  const docCount = project.document_count ?? 0;
+
+  // No per-project top-risk feed exists yet, so the footer surfaces the most
+  // honest signal we do have: health-band status plus document coverage.
+  const footerText =
+    project.health_score === null
+      ? "Awaiting first health score"
+      : project.health_score < 50
+        ? `Health below target${sector ? ` · ${sector}` : ""}`
+        : docCount > 0
+          ? `${docCount} document${docCount === 1 ? "" : "s"} tracked`
+          : "No open risks";
+
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: reduceMotion ? 0 : 0.28,
+        delay: reduceMotion ? 0 : index * 0.05,
+        ease: "easeOut",
+      }}
+    >
+      <Link
+        href={`/projects/${project.id}`}
+        className="group block rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/60"
+      >
+        <div className="flex items-start gap-4">
+          <HealthRing score={project.health_score} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span
+                className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                style={{
+                  color: band.color,
+                  backgroundColor: `${band.color}26`,
+                }}
+              >
+                {band.label}
+              </span>
+              {sector ? (
+                <span className="truncate text-xs text-muted-foreground">
+                  {sector}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 truncate font-display font-bold text-foreground">
+              {project.name}
+            </p>
+            <p className="truncate text-sm text-muted-foreground">
+              {project.client ?? "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 border-t pt-3">
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: band.color }}
+          />
+          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            Top risk
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {footerText}
+          </span>
+        </div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -235,21 +362,18 @@ function StatCard({
         delay: reduceMotion ? 0 : index * 0.06,
         ease: "easeOut",
       }}
+      className="rounded-2xl border bg-card p-5"
     >
-      <Card>
-        <CardHeader>
-          <CardDescription className="flex items-center justify-between">
-            <span>{label}</span>
-            <Icon className="size-4 text-muted-foreground" />
-          </CardDescription>
-          <CardTitle className="text-3xl font-semibold tabular-nums">
-            {value}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-xs text-muted-foreground">
-          {hint}
-        </CardContent>
-      </Card>
+      <div className="flex items-start justify-between">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="flex size-8 items-center justify-center rounded-lg bg-accent">
+          <Icon className="size-4 text-muted-foreground" />
+        </span>
+      </div>
+      <p className="mt-3 font-display text-3xl font-bold tabular-nums text-foreground">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </motion.div>
   );
 }

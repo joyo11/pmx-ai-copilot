@@ -1,6 +1,7 @@
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/nextjs";
 
 import { NavRail } from "@/components/nav-rail";
+import { OnboardingModal } from "@/components/onboarding-modal";
 
 export default function AppLayout({
   children,
@@ -17,6 +18,7 @@ export default function AppLayout({
           <NavRail />
           <div className="flex flex-1 flex-col">{children}</div>
         </div>
+        <OnboardingModal />
       </SignedIn>
     </>
   );

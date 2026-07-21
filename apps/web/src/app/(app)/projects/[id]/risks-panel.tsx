@@ -2,26 +2,18 @@
 
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
-import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
-  CheckCircle2,
-  MoreHorizontal,
+  ChevronRight,
+  FileText,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -86,6 +78,35 @@ const SEVERITY_STYLES: Record<
     text: "text-red-700 dark:text-red-500",
   },
 };
+
+/** Handoff risk palette (severity → hex). 5 folds into critical red. */
+const SEVERITY_HEX: Record<number, string> = {
+  1: "#35C97F",
+  2: "#F2B233",
+  3: "#F5893D",
+  4: "#F65563",
+  5: "#F65563",
+};
+
+function sevHex(severity: number): string {
+  return SEVERITY_HEX[severity] ?? "#F5893D";
+}
+
+/**
+ * A concise exposure string for the right-most column. Prefer a dollar/impact
+ * figure lifted from the title or business_impact; fall back to a truncated
+ * business_impact, then to the severity label.
+ */
+function exposureLabel(r: RiskSummary): string {
+  const hay = `${r.title} ${r.business_impact ?? ""}`;
+  const money = hay.match(
+    /\$\s?\d[\d,]*(?:\.\d+)?\s?(?:[KkMmBb]\b|million|billion|thousand)?/
+  );
+  if (money) return money[0].replace(/\s+/g, " ").trim();
+  const impact = r.business_impact?.trim();
+  if (impact) return impact.length > 16 ? `${impact.slice(0, 15).trimEnd()}…` : impact;
+  return `Sev ${r.severity}`;
+}
 
 function statusVariant(
   status: RiskStatus
@@ -255,48 +276,53 @@ export function RisksPanel({
               type="button"
               onClick={() => setCategory(c.key)}
               className={cn(
-                "inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                "inline-flex min-h-8 items-center rounded-full border px-3.5 text-xs font-medium transition-colors",
                 category === c.key
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  : "border bg-card text-muted-foreground hover:text-foreground"
               )}
             >
               {c.label}
             </button>
           ))}
         </div>
-        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-full border px-3 py-1.5">
-          <span className="text-xs text-muted-foreground">Severity ≥</span>
-          <input
-            type="range"
-            min={1}
-            max={5}
-            step={1}
-            value={severityGte}
-            onChange={(e) => setSeverityGte(Number(e.target.value))}
-            className="min-w-0 flex-1 accent-primary"
-            aria-label="Minimum severity"
-          />
-          <span className="w-4 text-center text-xs font-semibold tabular-nums">
-            {severityGte}
-          </span>
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          {risks ? (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {risks.length} {risks.length === 1 ? "risk" : "risks"}
+            </span>
+          ) : null}
+          <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5">
+            <span className="text-xs text-muted-foreground">Severity ≥</span>
+            <input
+              type="range"
+              min={1}
+              max={5}
+              step={1}
+              value={severityGte}
+              onChange={(e) => setSeverityGte(Number(e.target.value))}
+              className="w-20 accent-primary"
+              aria-label="Minimum severity"
+            />
+            <span className="w-4 text-center text-xs font-semibold tabular-nums">
+              {severityGte}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void onScan()}
+            disabled={scanning}
+          >
+            <RefreshCw className={cn("size-4", scanning && "animate-spin")} />
+            {scanning ? "Scanning…" : "Refresh scan"}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void onScan()}
-          disabled={scanning}
-          className="ml-auto"
-        >
-          <RefreshCw
-            className={cn("size-4", scanning && "animate-spin")}
-          />
-          {scanning ? "Scanning…" : "Refresh scan"}
-        </Button>
       </div>
 
       {error ? (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
+        <div className="flex items-start gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="flex-1">
             <p className="font-medium text-destructive">Could not load risks</p>
@@ -311,131 +337,93 @@ export function RisksPanel({
       {risks === null ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-16 rounded-lg" />
+            <Skeleton key={i} className="h-16 rounded-2xl" />
           ))}
         </div>
       ) : risks.length === 0 ? (
         <EmptyState onScan={onScan} scanning={scanning} />
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-xl border md:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="w-1 px-3 py-2 text-left" />
-                  <th className="px-3 py-2 text-left">Risk</th>
-                  <th className="px-3 py-2 text-left">Category</th>
-                  <th className="px-3 py-2 text-right">Likelihood</th>
-                  <th className="px-3 py-2 text-right">Confidence</th>
-                  <th className="px-3 py-2 text-left">Status</th>
-                  <th className="w-10 px-2 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {risks.map((r) => {
-                  const sev = SEVERITY_STYLES[r.severity] ?? SEVERITY_STYLES[3];
-                  return (
-                    <RiskRow
-                      key={r.id}
-                      onClick={() => void openDetail(r.id)}
-                      borderClass={sev.border}
-                    >
-                      <td className="px-3 py-3">
-                        <span
-                          className={cn(
-                            "text-xs font-semibold tabular-nums",
-                            sev.text
-                          )}
-                        >
-                          {r.severity}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">
-                        <p className="font-medium leading-tight">
-                          {r.title}
-                        </p>
-                        {r.business_impact ? (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                            {r.business_impact}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-3 text-xs capitalize text-muted-foreground">
-                        {r.category}
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
-                        {Math.round((r.likelihood ?? 0) * 100)}%
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
-                        {typeof r.confidence === "number"
-                          ? `${Math.round(r.confidence * 100)}%`
-                          : "—"}
-                      </td>
-                      <td className="px-3 py-3">
-                        <Badge
-                          variant={statusVariant(r.status)}
-                          className="capitalize"
-                        >
-                          {r.status}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-3">
-                        <RowMenu
-                          disabled={r.status === "resolved"}
-                          onAction={(status) => void onStatusChange(r.id, status)}
-                        />
-                      </td>
-                    </RiskRow>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="overflow-x-auto">
+            <div className="min-w-[720px]">
+              {/* Header */}
+              <div className="grid grid-cols-[44px_1fr_130px_110px_120px_40px] items-center gap-3 bg-secondary px-5 py-[13px] text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                <div>Sev</div>
+                <div>Risk</div>
+                <div>Category</div>
+                <div>Likelihood</div>
+                <div className="text-right">Exposure</div>
+                <div />
+              </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-2 md:hidden">
-            {risks.map((r) => {
-              const sev = SEVERITY_STYLES[r.severity] ?? SEVERITY_STYLES[3];
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => void openDetail(r.id)}
-                  className={cn(
-                    "w-full rounded-lg border border-l-4 bg-background p-3 text-left transition-colors hover:bg-accent/40",
-                    sev.border
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{r.title}</p>
-                      <p className="mt-0.5 text-xs capitalize text-muted-foreground">
-                        {r.category} · {sev.label}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={statusVariant(r.status)}
-                      className="capitalize"
+              {/* Rows */}
+              {risks.map((r) => {
+                const hex = sevHex(r.severity);
+                return (
+                  <div
+                    key={r.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => void openDetail(r.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        void openDetail(r.id);
+                      }
+                    }}
+                    className="grid cursor-pointer grid-cols-[44px_1fr_130px_110px_120px_40px] items-center gap-3 border-b px-5 py-3 outline-none transition-colors last:border-b-0 hover:bg-secondary focus-visible:bg-secondary"
+                  >
+                    {/* Sev */}
+                    <div
+                      className="flex size-[30px] items-center justify-center rounded-lg"
+                      style={{ backgroundColor: `${hex}26` }}
                     >
-                      {r.status}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Likelihood {Math.round((r.likelihood ?? 0) * 100)}%
-                    </span>
-                    {typeof r.confidence === "number" ? (
-                      <span>
-                        Confidence {Math.round(r.confidence * 100)}%
+                      <AlertTriangle className="size-4" style={{ color: hex }} />
+                    </div>
+
+                    {/* Risk */}
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {r.title}
+                      </p>
+                      <div className="mt-0.5 flex items-center gap-1 text-[12px] text-muted-foreground">
+                        <FileText className="size-3 shrink-0" />
+                        <span className="truncate capitalize">
+                          {r.category}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <span className="inline-flex items-center rounded-full border bg-secondary px-2 py-0.5 text-[11px] capitalize text-muted-foreground">
+                        {r.category}
                       </span>
-                    ) : null}
+                    </div>
+
+                    {/* Likelihood */}
+                    <div className="text-[13px] tabular-nums text-muted-foreground">
+                      {Math.round((r.likelihood ?? 0) * 100)}%
+                    </div>
+
+                    {/* Exposure */}
+                    <div
+                      className="truncate text-right font-display font-bold tabular-nums"
+                      style={{ color: hex }}
+                    >
+                      {exposureLabel(r)}
+                    </div>
+
+                    {/* Chevron */}
+                    <div className="flex justify-end">
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </div>
                   </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       <RiskDetailSheet
@@ -454,78 +442,6 @@ export function RisksPanel({
   );
 }
 
-function RiskRow({
-  children,
-  onClick,
-  borderClass,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  borderClass: string;
-}) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.tr
-      onClick={onClick}
-      className={cn(
-        "cursor-pointer border-t border-l-4 transition-colors hover:bg-accent/40",
-        borderClass
-      )}
-      whileHover={
-        reduceMotion
-          ? undefined
-          : {
-              scale: 1.005,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }
-      }
-      transition={{ duration: 0.15, ease: "easeOut" }}
-      style={{ transformOrigin: "left center" }}
-    >
-      {children}
-    </motion.tr>
-  );
-}
-
-function RowMenu({
-  onAction,
-  disabled,
-}: {
-  onAction: (status: Exclude<RiskStatus, "open">) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={disabled}
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Risk actions"
-        >
-          <MoreHorizontal className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DropdownMenuItem onSelect={() => onAction("acknowledged")}>
-          <CheckCircle2 className="size-4" /> Acknowledge
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onAction("mitigated")}>
-          <ShieldCheck className="size-4" /> Mark mitigated
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onAction("resolved")}>
-          <CheckCircle2 className="size-4" /> Resolve
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 function EmptyState({
   onScan,
   scanning,
@@ -534,7 +450,7 @@ function EmptyState({
   scanning: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-10 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card p-10 text-center">
       <div className="flex size-12 items-center justify-center rounded-full bg-muted">
         <Sparkles className="size-5 text-muted-foreground" />
       </div>

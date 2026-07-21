@@ -63,7 +63,7 @@ export default function Landing() {
             <a href="#trust" style={{ color: "inherit" }}>Integrations</a>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
-            <Link href="/dashboard" className="pmx-btn" style={{ padding: "11px 20px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 14.5, fontFamily: "var(--font-d)" }}>See a live demo</Link>
+            <Link href="/demo" className="pmx-btn" style={{ padding: "11px 20px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 14.5, fontFamily: "var(--font-d)" }}>See a live demo</Link>
           </div>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function Landing() {
             <h1 style={{ fontFamily: "var(--font-d)", fontWeight: 700, fontSize: 60, lineHeight: 1.03, letterSpacing: "-0.02em", margin: "0 0 20px" }}>See risk before it <span style={{ color: "#4BA3F5" }}>costs you.</span></h1>
             <p style={{ fontSize: 18, lineHeight: 1.55, color: "rgba(255,255,255,.8)", margin: "0 0 32px", maxWidth: 490 }}>PMX AI reads your schedules, budgets, RFIs, and meeting notes, then tells you which projects are slipping, why, and what to do next. Grounded in your documents. <span style={{ color: "#fff", fontWeight: 600 }}>Cited every time.</span></p>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-              <Link href="/dashboard" className="pmx-btn" style={{ padding: "15px 26px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 15.5, fontFamily: "var(--font-d)", display: "inline-flex", alignItems: "center", gap: 9 }}>See a live demo <span style={{ fontWeight: 800 }}>→</span></Link>
+              <Link href="/demo" className="pmx-btn" style={{ padding: "15px 26px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 15.5, fontFamily: "var(--font-d)", display: "inline-flex", alignItems: "center", gap: 9 }}>See a live demo <span style={{ fontWeight: 800 }}>→</span></Link>
               <a href="#how" className="pmx-btn" style={{ padding: "15px 24px", borderRadius: 999, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.22)", color: "#fff", fontWeight: 600, fontSize: 15.5, fontFamily: "var(--font-d)" }}>Watch how it works</a>
             </div>
             <div style={{ marginTop: 28, display: "flex", alignItems: "center", gap: 9, color: "rgba(255,255,255,.62)", fontSize: 13 }}>
@@ -168,7 +168,7 @@ export default function Landing() {
             <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", marginBottom: 14 }}><span style={{ color: "var(--teal)" }}>→</span> See it on real work</div>
             <h3 style={{ fontFamily: "var(--font-d)", fontWeight: 700, fontSize: 29, letterSpacing: "-0.02em", margin: "0 0 14px" }}>A $48M hospital, read in seconds</h3>
             <p style={{ margin: "0 0 22px", color: "var(--text-2)", fontSize: 15, lineHeight: 1.6 }}>Northshore Medical Center&apos;s bed-tower expansion is 11 weeks behind and 10.4% over. PMX AI ranked the risks, quantified the exposure, and cited every claim to a source page.</p>
-            <Link href="/dashboard" className="pmx-btn" style={{ display: "inline-block", padding: "13px 22px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 600, fontSize: 15, fontFamily: "var(--font-d)", boxShadow: "0 8px 22px var(--accent-soft)" }}>Open the seeded demo →</Link>
+            <Link href="/demo" className="pmx-btn" style={{ display: "inline-block", padding: "13px 22px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 600, fontSize: 15, fontFamily: "var(--font-d)", boxShadow: "0 8px 22px var(--accent-soft)" }}>Open the seeded demo →</Link>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
             {STATS.map((p) => (
@@ -196,7 +196,7 @@ export default function Landing() {
           <svg viewBox="0 0 400 400" preserveAspectRatio="none" style={{ position: "absolute", left: -30, top: -20, width: 360, height: 440, opacity: 0.35 }}><path d="M80 40 240 200 80 360" fill="none" stroke="#2FE3C9" strokeWidth="3" /></svg>
           <h2 style={{ position: "relative", fontFamily: "var(--font-d)", fontWeight: 700, fontSize: 40, letterSpacing: "-0.02em", margin: "0 0 14px" }}>Ready to see risk before it costs you?</h2>
           <p style={{ position: "relative", margin: "0 auto 26px", fontSize: 16, opacity: 0.85, maxWidth: 520 }}>Drop into a fully seeded demo project, no setup required.</p>
-          <Link href="/dashboard" className="pmx-btn" style={{ position: "relative", display: "inline-block", padding: "15px 30px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 16, fontFamily: "var(--font-d)", boxShadow: "0 12px 30px rgba(0,0,0,.28)" }}>See a live demo →</Link>
+          <Link href="/demo" className="pmx-btn" style={{ position: "relative", display: "inline-block", padding: "15px 30px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 700, fontSize: 16, fontFamily: "var(--font-d)", boxShadow: "0 12px 30px rgba(0,0,0,.28)" }}>See a live demo →</Link>
         </div>
       </div>
 

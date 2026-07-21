@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { FileText, Upload, CheckCircle2, Clock, XCircle, Eye, Loader2 } from "lucide-react";
+import { Upload, Eye, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -89,6 +89,7 @@ export function DocumentsPanel({
 
   return (
     <div className="space-y-6">
+      {/* Dropzone */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -97,29 +98,30 @@ export function DocumentsPanel({
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         className={cn(
-          "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors",
+          "flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed p-6 transition-colors sm:flex-row sm:items-center",
           dragOver
             ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25"
+            : "border-muted-foreground/30"
         )}
       >
-        <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-          <Upload className="size-5 text-muted-foreground" />
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <Upload className="size-5" />
         </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium">
-            Drop a PDF here, or click to browse
+        <div className="min-w-0 flex-1 text-center sm:text-left">
+          <p className="font-display text-base font-bold text-foreground">
+            Drop documents to analyze
           </p>
-          <p className="text-xs text-muted-foreground">
-            Schedules, budgets, RFI logs, meeting notes — anything project-related.
+          <p className="text-sm text-muted-foreground">
+            Schedules, cost reports, RFIs, meeting minutes — PDF, XER, XLSX,
+            DOCX up to 200MB
           </p>
         </div>
         <Button
-          size="sm"
           onClick={() => inputRef.current?.click()}
           disabled={uploading !== null}
+          className="shrink-0"
         >
-          {uploading ? "Uploading…" : "Upload PDF"}
+          {uploading ? "Uploading…" : "Browse files"}
         </Button>
         <input
           ref={inputRef}
@@ -131,7 +133,7 @@ export function DocumentsPanel({
       </div>
 
       {uploading ? (
-        <Card>
+        <Card className="rounded-2xl border bg-card">
           <CardContent className="space-y-2 pt-6">
             <div className="flex items-center justify-between text-sm">
               <span className="truncate font-medium">{uploading.filename}</span>
@@ -144,19 +146,55 @@ export function DocumentsPanel({
         </Card>
       ) : null}
 
-      <div className="space-y-2">
-        {documents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No documents yet. Upload one above.
-          </p>
-        ) : (
-          documents.map((doc) => (
-            <DocumentRow key={doc.id} doc={doc} projectId={projectId} />
-          ))
-        )}
-      </div>
+      {/* Documents table */}
+      {documents.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No documents yet. Upload one above.
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_130px_90px_130px_90px] items-center gap-2 bg-secondary px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                <div>Document</div>
+                <div>Type</div>
+                <div className="text-center">Pages</div>
+                <div>Analyzed</div>
+                <div />
+              </div>
+              {documents.map((doc) => (
+                <DocumentRow key={doc.id} doc={doc} projectId={projectId} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+const EXT_STYLES: Record<string, string> = {
+  PDF: "bg-[#F65563]/15 text-[#F65563]",
+  DOCX: "bg-[#3B93F0]/15 text-[#3B93F0]",
+  DOC: "bg-[#3B93F0]/15 text-[#3B93F0]",
+  XLSX: "bg-[#35C97F]/15 text-[#35C97F]",
+  XLS: "bg-[#35C97F]/15 text-[#35C97F]",
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  PDF: "PDF",
+  DOCX: "Meeting notes",
+  DOC: "Meeting notes",
+  XLSX: "Cost report",
+  XLS: "Cost report",
+  XER: "Schedule",
+};
+
+function fileExt(filename: string): string {
+  const parts = filename.split(".");
+  if (parts.length < 2) return "DOC";
+  return parts[parts.length - 1]!.toUpperCase();
 }
 
 function DocumentRow({
@@ -171,6 +209,10 @@ function DocumentRow({
   const [loading, setLoading] = React.useState(false);
   const [text, setText] = React.useState<string | null>(null);
   const canView = doc.status === "ready";
+
+  const ext = fileExt(doc.filename);
+  const badgeStyle = EXT_STYLES[ext] ?? "bg-muted text-muted-foreground";
+  const typeLabel = TYPE_LABELS[ext] ?? ext;
 
   async function view() {
     setOpen(true);
@@ -194,16 +236,46 @@ function DocumentRow({
 
   return (
     <>
-      <Card>
-        <CardContent className="flex items-center gap-3 py-3">
-          <FileText className="size-5 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{doc.filename}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatBytes(doc.bytes)} · uploaded{" "}
-              {new Date(doc.uploaded_at).toLocaleString()}
+      <div className="grid grid-cols-[1fr_130px_90px_130px_90px] items-center gap-2 border-b border-border px-4 py-3 last:border-b-0">
+        {/* Document */}
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={cn(
+              "flex size-[34px] shrink-0 items-center justify-center rounded-lg text-[10px] font-bold",
+              badgeStyle
+            )}
+          >
+            {ext.slice(0, 4)}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {doc.filename}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {formatBytes(doc.bytes)}
             </p>
           </div>
+        </div>
+
+        {/* Type */}
+        <div className="truncate text-sm text-muted-foreground">{typeLabel}</div>
+
+        {/* Pages */}
+        <div className="text-center text-sm tabular-nums text-muted-foreground">
+          —
+        </div>
+
+        {/* Analyzed */}
+        <div className="text-sm text-muted-foreground">
+          {new Date(doc.uploaded_at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </div>
+
+        {/* View / status */}
+        <div className="flex justify-end">
           {canView ? (
             <Button
               variant="outline"
@@ -213,10 +285,11 @@ function DocumentRow({
             >
               <Eye className="size-3.5" /> View
             </Button>
-          ) : null}
-          <StatusBadge status={doc.status} />
-        </CardContent>
-      </Card>
+          ) : (
+            <StatusBadge status={doc.status} />
+          )}
+        </div>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
@@ -247,20 +320,19 @@ function StatusBadge({ status }: { status: DocumentStatus }) {
   if (status === "ready") {
     return (
       <Badge variant="secondary" className="gap-1">
-        <CheckCircle2 className="size-3" /> Ready
+        Ready
       </Badge>
     );
   }
   if (status === "failed") {
     return (
       <Badge variant="destructive" className="gap-1">
-        <XCircle className="size-3" /> Failed
+        Failed
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="gap-1">
-      <Clock className="size-3" />
       {status === "uploaded"
         ? "Queued"
         : status === "extracting"
