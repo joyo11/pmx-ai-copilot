@@ -9,6 +9,7 @@ import {
   FileText,
   MessageSquare,
   ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +37,9 @@ import { HealthGauge } from "@/components/health-gauge";
 import { DocumentsPanel } from "./documents-panel";
 import { ChatPanel } from "./chat-panel";
 import { RisksPanel } from "./risks-panel";
+import { MeetingsPanel } from "./meetings-panel";
 
-type Tab = "overview" | "risks" | "documents" | "chat";
+type Tab = "overview" | "risks" | "documents" | "meetings" | "chat";
 
 const TABS: {
   key: Tab;
@@ -47,6 +49,7 @@ const TABS: {
   { key: "overview", label: "Overview", Icon: Activity },
   { key: "risks", label: "Risks", Icon: ShieldAlert },
   { key: "documents", label: "Documents", Icon: FileText },
+  { key: "meetings", label: "Meetings", Icon: Sparkles },
   { key: "chat", label: "Chat", Icon: MessageSquare },
 ];
 
@@ -272,6 +275,12 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               projectId={projectId}
               documents={documents}
               onChanged={onDocumentsChanged}
+            />
+          ) : null}
+          {tab === "meetings" ? (
+            <MeetingsPanel
+              projectId={projectId}
+              onSwitchToRisks={() => setTab("risks")}
             />
           ) : null}
           {tab === "chat" ? <ChatPanel projectId={projectId} /> : null}

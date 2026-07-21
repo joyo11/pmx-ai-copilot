@@ -15,6 +15,7 @@ from pmx_api.routers import (
     documents,
     health,
     me,
+    meetings,
     project_health,
     projects,
     risks,
@@ -54,6 +55,8 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(risks.project_scoped_router)
     app.include_router(risks.risk_scoped_router)
+    app.include_router(meetings.project_scoped_router)
+    app.include_router(meetings.meeting_scoped_router)
     app.include_router(project_health.router)
 
     # Instrumentation runs last, after all routes are mounted, otherwise

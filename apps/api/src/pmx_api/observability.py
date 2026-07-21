@@ -19,8 +19,13 @@ def configure_observability(app: FastAPI, settings: Settings) -> None:
     request-level tracing will land once the version drift is resolved.
     """
     _ = app  # reserved for when instrumentation is re-enabled
+
+    # Only ship to Logfire when we actually have a token. Otherwise logfire.configure
+    # raises LogfireConfigError at import time and crashes boot (the cause of the
+    # Render 503). This keeps the promise in the docstring: safe without a token.
+    send_to_logfire = settings.logfire_send_to_logfire and bool(settings.logfire_token)
     logfire.configure(
-        send_to_logfire=settings.logfire_send_to_logfire,
+        send_to_logfire=send_to_logfire,
         token=settings.logfire_token,
         service_name="pmx-api",
         environment=settings.environment,

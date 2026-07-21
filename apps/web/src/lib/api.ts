@@ -409,6 +409,113 @@ export async function getHealthHistory(
 }
 
 // ---------------------------------------------------------------------------
+// Meetings (M3)
+// ---------------------------------------------------------------------------
+
+export interface MeetingActionItem {
+  text: string;
+  owner: string;
+  due_date: string;
+  done: boolean;
+}
+
+export interface MeetingDecision {
+  text: string;
+  made_by: string;
+}
+
+export interface MeetingSummary {
+  id: string;
+  project_id: string;
+  meeting_date: string | null;
+  summary: string | null;
+  action_item_count: number;
+  decision_count: number;
+}
+
+export interface MeetingDetail {
+  id: string;
+  project_id: string;
+  meeting_date: string | null;
+  summary: string | null;
+  action_items: MeetingActionItem[];
+  decisions: MeetingDecision[];
+}
+
+export interface AnalyzeMeetingResponse {
+  meeting_id: string;
+  summary: string;
+  action_items: MeetingActionItem[];
+  decisions: MeetingDecision[];
+  risks_created: number;
+}
+
+export interface AnalyzeMeetingInput {
+  projectId: string;
+  meetingDate?: string; // YYYY-MM-DD
+  transcriptText?: string;
+  file?: File;
+}
+
+/**
+ * Analyze a meeting transcript. Chooses JSON or multipart based on whether
+ * `file` is set. The API accepts either at the same URL.
+ */
+export async function analyzeMeeting(
+  input: AnalyzeMeetingInput,
+  opts: RequestOptions
+): Promise<AnalyzeMeetingResponse> {
+  const { projectId, meetingDate, transcriptText, file } = input;
+  const path = `/v1/projects/${projectId}/meetings/analyze`;
+
+  if (file) {
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    if (meetingDate) fd.append("meeting_date", meetingDate);
+    const res = await apiFetch(path, { method: "POST", body: fd }, opts);
+    return (await res.json()) as AnalyzeMeetingResponse;
+  }
+
+  const res = await apiFetch(
+    path,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transcript_text: transcriptText ?? "",
+        meeting_date: meetingDate,
+      }),
+    },
+    opts
+  );
+  return (await res.json()) as AnalyzeMeetingResponse;
+}
+
+export async function listMeetings(
+  projectId: string,
+  opts: RequestOptions
+): Promise<MeetingSummary[]> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/meetings`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as MeetingSummary[];
+}
+
+export async function getMeeting(
+  meetingId: string,
+  opts: RequestOptions
+): Promise<MeetingDetail> {
+  const res = await apiFetch(
+    `/v1/meetings/${meetingId}`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as MeetingDetail;
+}
+
+// ---------------------------------------------------------------------------
 // Chat (SSE-over-POST)
 // ---------------------------------------------------------------------------
 

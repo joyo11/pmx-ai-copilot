@@ -21,8 +21,11 @@ services:
         value: INFO
       - key: CORS_ALLOW_ORIGINS
         value: https://pmx-ai-copilot.vercel.app
+      # Only enable when LOGFIRE_TOKEN is actually set — otherwise logfire.configure
+      # raises at import and crashes boot (the cause of the 503). observability.py
+      # now guards this too, but keep the flag off unless a token exists.
       - key: LOGFIRE_SEND_TO_LOGFIRE
-        value: "true"
+        value: "false"
       - key: HOST
         value: 0.0.0.0
       # Render injects PORT automatically for web services; declared here for clarity.
