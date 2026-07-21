@@ -36,7 +36,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from pmx_api.config import Settings, get_settings
-from pmx_api.db.models import Document, Project
+from pmx_api.db.models import Document, DocumentChunk, Project
 from pmx_api.deps import (
     CurrentUser,
     DBSession,
@@ -244,3 +244,59 @@ async def list_documents(
     )
     rows = (await db.execute(stmt)).scalars().all()
     return [_to_read(row) for row in rows]
+
+
+class DocumentContentRead(BaseModel):
+    document_id: uuid.UUID
+    filename: str
+    kind: str
+    pages: int
+    text: str
+
+
+@router.get(
+    "/{document_id}/content",
+    response_model=DocumentContentRead,
+    summary="Get a document's extracted text (reconstructed from chunks)",
+)
+async def get_document_content(
+    project_id: uuid.UUID,
+    document_id: uuid.UUID,
+    db: DBSession,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+) -> DocumentContentRead:
+    """Return a document's extracted text so it can be viewed in-app.
+
+    The original file may live on ephemeral disk, but the chunked text is in the
+    DB — so we reconstruct the readable content from ``document_chunks`` in order.
+    """
+    tenant = await resolve_tenant(db, current)
+    await _load_project_scoped(db, project_id, tenant)
+
+    doc = (
+        await db.execute(
+            select(Document).where(
+                Document.id == document_id,
+                Document.project_id == project_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    chunks = (
+        await db.execute(
+            select(DocumentChunk)
+            .where(DocumentChunk.document_id == document_id)
+            .order_by(DocumentChunk.chunk_index)
+        )
+    ).scalars().all()
+    text = "\n\n".join(c.text for c in chunks)
+    pages = max((c.page or 1 for c in chunks), default=0)
+    return DocumentContentRead(
+        document_id=doc.id,
+        filename=doc.filename,
+        kind=doc.kind,
+        pages=pages,
+        text=text,
+    )
