@@ -375,6 +375,34 @@ export interface HealthSnapshot {
   computed_at: string;
 }
 
+// The API stores `factors` as a JSONB dict keyed by factor name
+// ({budget_variance: {label, value, sub_score, weight, detail}, ...}), but the
+// UI expects an array of {key, label, weight, score}. Normalize here so every
+// consumer gets the array shape (and tolerate the array shape too).
+function normalizeHealth(raw: unknown): HealthSnapshot {
+  const snap = (raw ?? {}) as Record<string, unknown>;
+  const f = snap.factors;
+  let factors: HealthFactor[] = [];
+  if (Array.isArray(f)) {
+    factors = f as HealthFactor[];
+  } else if (f && typeof f === "object") {
+    factors = Object.entries(f as Record<string, Record<string, unknown>>).map(
+      ([key, v]) => ({
+        key,
+        label: typeof v?.label === "string" ? v.label : undefined,
+        weight: typeof v?.weight === "number" ? v.weight : 0,
+        score:
+          typeof v?.sub_score === "number"
+            ? Math.round(v.sub_score * 100)
+            : typeof v?.score === "number"
+              ? v.score
+              : 0,
+      })
+    );
+  }
+  return { ...(snap as unknown as HealthSnapshot), factors };
+}
+
 export async function getHealth(
   projectId: string,
   opts: RequestOptions
@@ -384,7 +412,7 @@ export async function getHealth(
     { method: "GET" },
     opts
   );
-  return (await res.json()) as HealthSnapshot;
+  return normalizeHealth(await res.json());
 }
 
 export async function recomputeHealth(
@@ -396,7 +424,7 @@ export async function recomputeHealth(
     { method: "POST" },
     opts
   );
-  return (await res.json()) as HealthSnapshot;
+  return normalizeHealth(await res.json());
 }
 
 export async function getHealthHistory(
@@ -408,7 +436,8 @@ export async function getHealthHistory(
     { method: "GET" },
     opts
   );
-  return (await res.json()) as HealthSnapshot[];
+  const data = (await res.json()) as unknown[];
+  return Array.isArray(data) ? data.map(normalizeHealth) : [];
 }
 
 // ---------------------------------------------------------------------------
