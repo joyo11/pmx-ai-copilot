@@ -401,8 +401,8 @@ function OverviewPanel({
       : null;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-      {/* LEFT: big health gauge + contributing factors (self-contained card). */}
+    <div className="space-y-5">
+      {/* Big health gauge + contributing factors (self-contained card). */}
       <HealthGauge
         snapshot={health}
         loading={healthLoading}
@@ -412,8 +412,8 @@ function OverviewPanel({
         hasDocuments={documentCount > 0}
       />
 
-      {/* RIGHT: quick-stat tiles alongside the gauge. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:content-start">
+      {/* Quick-stat tiles below the gauge. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <QuickStat
           label="Contract value"
           value={contract ?? "—"}

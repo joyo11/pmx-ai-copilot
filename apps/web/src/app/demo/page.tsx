@@ -39,6 +39,13 @@ const TOKENS = `
   #pmx-demo .pmx-2col{ grid-template-columns:1fr !important; }
   #pmx-demo .pmx-stats{ flex-wrap:wrap !important; }
 }
+@media (max-width:640px){
+  #pmx-demo .pmx-topbar-inner{ padding:12px 16px !important; gap:10px !important; }
+  #pmx-demo .pmx-page{ padding:24px 16px 56px !important; }
+  #pmx-demo .pmx-h1{ font-size:28px !important; }
+  #pmx-demo .pmx-back{ display:none !important; }
+  #pmx-demo .pmx-card{ padding:18px !important; }
+}
 `;
 
 const SEVERITY = {
@@ -158,6 +165,7 @@ export default function DemoPage() {
         }}
       >
         <div
+          className="pmx-topbar-inner"
           style={{
             maxWidth: 1160,
             margin: "0 auto",
@@ -200,6 +208,7 @@ export default function DemoPage() {
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
             <Link
               href="/"
+              className="pmx-back"
               style={{ color: "rgba(255,255,255,.78)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-d)" }}
             >
               Back to home
@@ -223,7 +232,7 @@ export default function DemoPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1160, margin: "0 auto", padding: "34px 26px 70px" }}>
+      <div className="pmx-page" style={{ maxWidth: 1160, margin: "0 auto", padding: "34px 26px 70px" }}>
         {loadError && !project && (
           <div
             style={{
@@ -297,6 +306,7 @@ export default function DemoPage() {
               {(project.sector ?? "construction")} · {project.client ?? "Owner"}
             </div>
             <h1
+              className="pmx-h1"
               style={{
                 fontFamily: "var(--font-d)",
                 fontWeight: 700,
