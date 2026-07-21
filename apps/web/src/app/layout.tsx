@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fredoka, Nunito } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 
@@ -19,6 +19,19 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// PMX AI design system fonts (Claude Design handoff): warm rounded display + body.
+const fredoka = Fredoka({
+  variable: "--font-display",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+const nunito = Nunito({
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "PMX AI — Project Risk Copilot",
   description:
@@ -34,7 +47,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-svh bg-background text-foreground">
         <ClerkProvider appearance={{ theme: shadcn }}>
