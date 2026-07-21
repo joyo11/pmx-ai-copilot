@@ -85,14 +85,17 @@ export class ApiNotConfiguredError extends Error {
   }
 }
 
+// Deployed backend on Render. Used when NEXT_PUBLIC_API_URL isn't set at build
+// time (e.g. the Vercel env var is empty), so production never falls back to a
+// dead host. Local dev overrides this via .env.local (NEXT_PUBLIC_API_URL).
+const DEFAULT_API_URL = "https://pmx-api-l893.onrender.com";
+
 function apiBase(): string {
-  const url =
+  const configured =
     typeof process !== "undefined"
       ? process.env.NEXT_PUBLIC_API_URL
       : undefined;
-  if (!url) {
-    throw new ApiNotConfiguredError();
-  }
+  const url = configured && configured.trim() ? configured.trim() : DEFAULT_API_URL;
   return url.replace(/\/+$/, "");
 }
 
