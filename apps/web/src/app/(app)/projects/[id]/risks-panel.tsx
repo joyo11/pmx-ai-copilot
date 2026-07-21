@@ -653,10 +653,10 @@ function RiskDetailSheet({
                   </p>
                 </Section>
               ) : null}
-              {risk.citations.length > 0 ? (
+              {(risk.citations ?? []).length > 0 ? (
                 <Section title="Citations">
                   <div className="flex flex-wrap gap-1.5">
-                    {risk.citations.map((c, i) => (
+                    {(risk.citations ?? []).map((c, i) => (
                       <CitationChip
                         key={citationKey(c) + i}
                         citation={c}
