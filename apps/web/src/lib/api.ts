@@ -188,6 +188,27 @@ export async function listDocuments(
   return (await res.json()) as ProjectDocument[];
 }
 
+export interface DocumentContent {
+  document_id: string;
+  filename: string;
+  kind: string;
+  pages: number;
+  text: string;
+}
+
+export async function getDocumentContent(
+  projectId: string,
+  documentId: string,
+  opts: RequestOptions
+): Promise<DocumentContent> {
+  const res = await apiFetch(
+    `/v1/projects/${projectId}/documents/${documentId}/content`,
+    { method: "GET" },
+    opts
+  );
+  return (await res.json()) as DocumentContent;
+}
+
 export interface UploadDocumentInput {
   projectId: string;
   file: File;
