@@ -1,0 +1,44 @@
+NORTHSHORE MEDICAL CENTER - BED TOWER EXPANSION
+RFI Log Narrative | Prepared by Group PMX
+The following Requests for Information are open past their contractual response
+period (10 business days) and are actively impacting field work.
+RFI-042 - Embed Plate Conflict at Grid C-4 (Structural)
+Submitted 45 days ago; response was due 28 days ago; still OPEN.
+The GC identified a conflict between the structural embed plate detail and the
+poured-in-place shear wall reinforcement at grid C-4. Field cannot set the
+Level 3 beam connection until the EOR confirms a revised embed. Every week this
+stays open pushes the Level 3-6 steel sequence, which is on the critical path.
+AI delay risk: HIGH.
+RFI-051 - Panel Schedule LP-4 Discrepancy (Electrical)
+Submitted 38 days ago; response was due 21 days ago; still OPEN.
+The electrical panel schedule for LP-4 does not match the single-line diagram
+for the permanent power feeders. The utility will not schedule energization
+until the discrepancy is resolved. This directly threatens the permanent power
+energization milestone, currently 18 days late. AI delay risk: HIGH.
+RFI-058 - Medical Gas Rough-in Routing, Level 4 (Mechanical/Plumbing)
+Submitted 30 days ago; response was due 16 days ago; still OPEN.
+Overhead medical gas mains clash with structural steel beam pockets at grid
+lines C and D on Level 4. Medical gas rough-in is on hold pending resolved
+routing. This is a near-critical predecessor to interior close-in.
+AI delay risk: MEDIUM-HIGH.
+
+
+CLOSED / ANSWERED RFIs (for reference)
+RFI-039 - Door hardware group at ICU suite (Architectural): ANSWERED on time.
+RFI-047 - Roof drain overflow sizing (Plumbing): ANSWERED, no schedule impact.
+IMPACT ANALYSIS
+The three open RFIs above share a common theme: each blocks a critical or
+near-critical path activity, and each has aged well past the 10-day contractual
+response window. RFI-042 and RFI-051 are the most urgent because they sit
+directly on the steel-erection and permanent-power critical paths. The aggregate
+effect of these overdue RFIs is an estimated 2-3 weeks of avoidable schedule
+erosion if they are not closed within the week.
+RECOMMENDATIONS
+1. Escalate RFI-042 to the EOR for a same-week response; the embed plate
+   conflict is the single highest-leverage open item.
+2. Convene a short utility-coordination call to resolve RFI-051 and protect the
+   energization date.
+3. Hold a focused MEP coordination session to finalize Level 4 medical gas
+   routing (RFI-058) so rough-in can resume.
+4. Institute a weekly RFI aging review; no RFI on the critical path should be
+   allowed to exceed the 10-day response window without escalation.

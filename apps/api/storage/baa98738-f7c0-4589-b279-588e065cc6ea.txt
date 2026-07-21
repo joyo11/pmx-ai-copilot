@@ -1,0 +1,49 @@
+NORTHSHORE MEDICAL CENTER - BED TOWER EXPANSION
+Monthly Cost & Schedule Report | Period ending this month | Prepared by Group PMX
+1. EARNED VALUE SUMMARY
+Budget at Completion (BAC): $48.0M. Actual Cost of Work Performed (ACWP) to date
+is tracking above the Budgeted Cost of Work Performed (BCWP). Cost Performance
+Index (CPI) is approximately 0.90 and Schedule Performance Index (SPI) is
+approximately 0.93 - both below 1.0, indicating the project is over budget and
+behind schedule this period. The current Estimate at Completion (EAC) forecasts
+a total near $50.8M against the $46.0M forecast baseline for these divisions,
+about 10.4% over forecast, before pending change orders are executed.
+2. BUDGET VARIANCE BY DIVISION (forecast vs. actual)
+- Sitework / Earthwork: forecast $4.0M, actual $6.4M. Major overrun driven by
+  unforeseen rock excavation in the north foundation zone (see CO-07). This is
+  the single largest contributor to the cost variance.
+- Structural Steel: forecast $6.4M, actual $7.6M. Mill price escalation plus
+  expedited freight on the Level 3-6 sequences (see CO-11).
+- Concrete: forecast $5.0M, actual $5.1M. On plan.
+- Mechanical/Electrical/Plumbing: forecast $12.5M, actual $13.4M. Trending over
+  on added generator capacity (CO-12) and medical gas rework exposure.
+- Exterior Envelope / Curtain Wall: forecast $4.6M, actual $4.7M. On plan.
+- Interiors / Finishes: forecast $8.0M, actual $8.2M. Slightly over.
+- Medical Equipment: forecast $5.5M, actual $5.4M. On plan.
+Aggregate: forecast $46.0M, actual $50.8M, an overrun of about 10.4%.
+
+
+3. SCHEDULE / CRITICAL PATH ANALYSIS
+The critical path runs: structural steel erection (Levels 3-6) -> Level 4 MEP
+rough-in -> interior close-in -> permanent power energization -> commissioning.
+Steel erection is 21 days behind plan; Level 4 MEP rough-in 14 days behind;
+permanent power energization 18 days behind. Total forecast slip to substantial
+completion is approximately 11 weeks (contract 30-Jun-2027, forecast
+15-Sep-2027). Liquidated damages under the contract are $12,000 per calendar day
+beyond substantial completion, so an 11-week slip represents roughly $924,000 of
+exposure if not recovered.
+4. RECOVERY OPTIONS
+Group PMX and the GC are evaluating: (a) adding a second steel erection crew and
+a Saturday shift to claw back 2-3 weeks; (b) re-sequencing Level 4 MEP to start
+in the completed south bays while the north steel finishes; (c) expediting the
+RFI-051 utility coordination to protect the energization date. Option (b) has no
+added cost and is recommended for immediate implementation.
+5. CASH FLOW & CONTINGENCY
+Remaining GMP contingency is $1.1M. The five pending change orders total $2.46M,
+which exceeds remaining contingency by $1.36M. Group PMX recommends the Owner
+prioritize CO-07 and CO-11 (schedule-linked) and defer CO-09 imaging upgrade to
+a separate funding source to preserve contingency for construction risk.
+6. RISK OUTLOOK
+Top risks this period: (1) cost overrun driven by sitework and steel; (2) the
+11-week schedule slip and associated LD exposure; (3) overdue RFIs blocking field
+work; (4) pending change-order volume exceeding contingency.

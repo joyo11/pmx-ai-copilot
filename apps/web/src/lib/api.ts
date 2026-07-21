@@ -29,6 +29,10 @@ export interface Project {
   status: ProjectStatus;
   health_score: number | null;
   document_count?: number;
+  planned_end_date?: string | null;
+  forecast_end_date?: string | null;
+  budget_total_cents?: number | null;
+  budget_spent_cents?: number | null;
   created_at: string;
   updated_at?: string;
 }

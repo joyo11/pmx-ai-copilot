@@ -53,6 +53,37 @@ const TABS: {
   { key: "chat", label: "Chat", Icon: MessageSquare },
 ];
 
+function healthBand(score: number | null): {
+  label: string;
+  color: string;
+  soft: string;
+} {
+  const s = typeof score === "number" ? score : 100;
+  if (s >= 75) return { label: "Healthy", color: "#35C97F", soft: "rgba(53,201,127,.15)" };
+  if (s >= 50) return { label: "On watch", color: "#F2B233", soft: "rgba(242,178,51,.15)" };
+  if (s >= 30) return { label: "At risk", color: "#F5893D", soft: "rgba(245,137,61,.15)" };
+  return { label: "Critical", color: "#F65563", soft: "rgba(246,85,99,.16)" };
+}
+
+function weeksBetween(
+  plannedIso?: string | null,
+  forecastIso?: string | null
+): number | null {
+  if (!plannedIso || !forecastIso) return null;
+  const p = new Date(plannedIso).getTime();
+  const f = new Date(forecastIso).getTime();
+  if (Number.isNaN(p) || Number.isNaN(f)) return null;
+  return Math.round((f - p) / (1000 * 60 * 60 * 24 * 7));
+}
+
+function compactUSD(cents?: number | null): string | null {
+  if (typeof cents !== "number") return null;
+  const dollars = cents / 100;
+  if (dollars >= 1e6) return `$${(dollars / 1e6).toFixed(1)}M`;
+  if (dollars >= 1e3) return `$${(dollars / 1e3).toFixed(0)}K`;
+  return `$${dollars.toFixed(0)}`;
+}
+
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const { getToken, isLoaded } = useAuth();
   const [project, setProject] = React.useState<Project | null>(null);
@@ -190,40 +221,77 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   if (!project) return null;
 
   const headerScore = health?.score ?? project.health_score ?? null;
+  const band = healthBand(headerScore);
+  const scheduleWeeks = weeksBetween(
+    project.planned_end_date,
+    project.forecast_end_date
+  );
+  const contract = compactUSD(project.budget_total_cents);
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl">{project.name}</CardTitle>
-              <CardDescription className="flex flex-wrap items-center gap-3">
-                {project.client ? <span>{project.client}</span> : null}
-                {project.sector ? (
-                  <Badge variant="secondary" className="capitalize">
-                    {project.sector}
-                  </Badge>
-                ) : null}
-                <span>·</span>
-                <span>
-                  {documents.length} document{documents.length === 1 ? "" : "s"}
-                </span>
-              </CardDescription>
-            </div>
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Health score
-              </p>
-              <p className="text-3xl font-semibold tabular-nums">
+      {/* Rich project header (Claude Design layout): band + stat row + ask CTA */}
+      <div className="rounded-2xl border bg-card p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2.5">
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-bold"
+                style={{ background: band.soft, color: band.color }}
+              >
+                {band.label}
                 {typeof headerScore === "number"
-                  ? Math.round(headerScore)
-                  : "—"}
-              </p>
+                  ? ` · Health ${Math.round(headerScore)}`
+                  : ""}
+              </span>
+              <span className="text-[13px] capitalize text-muted-foreground">
+                {project.sector}
+                {project.client ? ` · ${project.client}` : ""}
+              </span>
+            </div>
+            <h1 className="font-display text-[26px] font-bold tracking-tight">
+              {project.name}
+            </h1>
+            <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-muted-foreground">
+              {contract ? (
+                <span>
+                  <b className="tabular-nums text-foreground">{contract}</b>{" "}
+                  contract
+                </span>
+              ) : null}
+              {scheduleWeeks !== null && scheduleWeeks !== 0 ? (
+                <span>
+                  <b
+                    className="tabular-nums"
+                    style={{ color: scheduleWeeks > 0 ? "#F65563" : "#35C97F" }}
+                  >
+                    {scheduleWeeks > 0 ? "−" : "+"}
+                    {Math.abs(scheduleWeeks)} wk
+                  </b>{" "}
+                  schedule
+                </span>
+              ) : null}
+              <span>
+                <b className="tabular-nums text-foreground">
+                  {documents.length}
+                </b>{" "}
+                document{documents.length === 1 ? "" : "s"}
+              </span>
             </div>
           </div>
-        </CardHeader>
-      </Card>
+          <Button onClick={() => setTab("chat")} className="gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Ask about this project
+          </Button>
+        </div>
+      </div>
 
       <div className="flex gap-1 overflow-x-auto border-b">
         {TABS.map((t) => (

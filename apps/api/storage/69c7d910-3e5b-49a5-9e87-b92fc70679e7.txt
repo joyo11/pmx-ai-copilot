@@ -1,0 +1,61 @@
+NORTHSHORE MEDICAL CENTER - BED TOWER EXPANSION
+Owner-Architect-Contractor (OAC) Progress Meeting Minutes
+Meeting No. 17 | Project No. NMC-2025-04 | Rockville, Maryland
+Owner: Northshore Health System   Program Manager: Group PMX
+Contract: GMP, $48.0M   Original Substantial Completion: 30-Jun-2027
+ATTENDEES: Owner rep (Facilities Director), Group PMX PM and scheduler,
+GC project executive and superintendent, MEP coordinator, architect of record,
+structural EOR (by phone).
+1. OVERALL STATUS
+Project is 65% complete by cost, 61% complete by schedule. Overall health has
+declined this period, driven primarily by structural steel delivery delays and
+newly discovered subsurface rock in the north foundation zone. The GC has issued
+a revised forecast substantial completion of 15-Sep-2027, a slip of roughly 11
+weeks against the contract date. Group PMX has requested a formal Time Impact
+Analysis (TIA) and a recovery plan by the next meeting.
+2. SAFETY
+Zero lost-time incidents this period. Total recordable incident rate remains
+below 1.5. One near-miss reported during steel erection (unsecured load); the GC
+re-briefed the crew and revised the lift plan. OSHA-required fall protection
+audits are current.
+3. SCHEDULE - CRITICAL PATH
+The critical path now runs through structural steel erection (Levels 3-6),
+Level 4 MEP rough-in, and permanent power energization. Steel erection is 21
+calendar days behind due to a fabricator delivery shortfall on the Level 3-6
+sequences. Level 4 MEP rough-in cannot start in full until the steel deck above
+is complete, so the steel slip is cascading. Permanent power / switchgear
+energization is tracking 18 days late pending utility coordination and RFI-051.
+Curtain wall (east elevation) is 9 days behind but has float and is not yet on
+the critical path.
+
+
+4. STRUCTURAL / FOUNDATIONS
+During mass excavation of the north foundation zone the GC encountered
+competent rock roughly 4-6 feet above the anticipated elevation shown in the
+geotechnical baseline. Additional drilling, hoe-ramming, and export were
+required. This is the basis of Change Order CO-07 (unforeseen rock excavation).
+The EOR confirmed footing designs are unaffected, but the added earthwork has
+both cost and schedule impact and contributed to the north-zone slip.
+5. MEP COORDINATION
+The MEP coordinator reported unresolved clashes between the Level 4 overhead
+medical gas mains and the structural steel beam pockets at grid lines C and D.
+This is the subject of RFI-058. Until routing is confirmed, the GC is holding
+medical gas rough-in on Level 4, which is a near-critical predecessor to
+interior wall close-in. Air handling unit (AHU-3) delivery is confirmed for next
+month; no issue.
+6. CHANGE ORDERS
+Five change orders are pending owner execution totaling approximately $2.46M:
+CO-07 unforeseen rock excavation ($840k), CO-09 owner-requested imaging suite
+upgrade ($610k), CO-11 structural steel escalation ($520k), CO-12 added
+emergency generator capacity ($305k), and CO-13 revised nurse-call system
+($180k). Group PMX flagged that the volume of pending change orders is eroding
+contingency and asked the Owner to expedite decisions to avoid further delay.
+7. OPEN RFIs OF CONCERN
+RFI-042 (embed plate conflict at grid C-4), RFI-051 (panel schedule LP-4
+discrepancy), and RFI-058 (medical gas routing) are all open past their required
+response dates and are impacting field work. See the RFI Log narrative.
+8. ACTION ITEMS
+(a) GC to submit TIA and recovery plan for the 11-week slip - due next meeting.
+(b) Owner to execute or reject CO-07, CO-09, CO-11 within 10 days.
+(c) EOR to respond to RFI-042 embed plate conflict this week.
+(d) MEP coordinator to publish resolved Level 4 medical gas routing.

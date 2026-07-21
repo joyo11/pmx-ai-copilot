@@ -152,13 +152,13 @@ export function HealthGauge({
     <Card>
       <CardContent className="grid gap-6 py-6 md:grid-cols-[auto_1fr] md:items-start">
         <div className="flex flex-col items-center gap-3 md:items-start">
-          <div className="relative size-36">
+          <div className="relative size-56">
             <AnimatedRing score={score} ringClass={color.ring} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <AnimatedScore
                 score={score}
                 className={cn(
-                  "text-4xl font-semibold tabular-nums leading-none",
+                  "font-display text-6xl font-bold tabular-nums leading-none",
                   color.text
                 )}
               />

@@ -12,7 +12,7 @@ Update / archive endpoints are deferred to M2 per DR-002 (M1 = create + list
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -55,6 +55,10 @@ class ProjectRead(BaseModel):
     location: str | None
     status: str
     health_score: int | None
+    planned_end_date: date | None = None
+    forecast_end_date: date | None = None
+    budget_total_cents: int | None = None
+    budget_spent_cents: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -69,6 +73,10 @@ def _to_read(project: Project) -> ProjectRead:
         location=project.location,
         status=project.status,
         health_score=project.health_score,
+        planned_end_date=project.planned_end_date,
+        forecast_end_date=project.forecast_end_date,
+        budget_total_cents=project.budget_total_cents,
+        budget_spent_cents=project.budget_spent_cents,
         created_at=project.created_at,
         updated_at=project.updated_at,
     )
