@@ -1,0 +1,19 @@
+name: keep-warm
+
+# Pings the Render backend every ~10 minutes so the free-tier service never
+# spins down (Render free sleeps after ~15 min idle). Keeps the live demo
+# instant with no paid plan. Also warms the demo bundle so the DB pool + the
+# demo query path stay hot.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health + demo bundle
+        run: |
+          echo "health: $(curl -sS -m 90 -o /dev/null -w '%{http_code}' https://pmx-api-l893.onrender.com/v1/health || echo fail)"
+          echo "demo:   $(curl -sS -m 90 -o /dev/null -w '%{http_code}' https://pmx-api-l893.onrender.com/v1/demo/bundle || echo fail)"
